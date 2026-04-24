@@ -1,0 +1,41 @@
+using System;
+using Mapf.Core.Model;
+using Mapf.Core.Planning;
+
+namespace Mapf.Core.CCBS
+{
+    internal static class ConstraintGenerator
+    {
+        public static Constraint ForAgent(int agentId, TimedMove ownMove, TimedMove otherMove, MapfPlannerSettings settings)
+        {
+            if (ownMove.IsWait)
+            {
+                var start = Math.Max(ownMove.StartTime, otherMove.StartTime);
+                var end = Math.Min(ownMove.EndTime, otherMove.EndTime);
+                if (double.IsPositiveInfinity(end))
+                    end = start + 1;
+                return new Constraint(agentId, ownMove.FromNodeId, ownMove.FromNodeId, start, Math.Max(start + settings.Epsilon, end));
+            }
+
+            var startConstraint = ownMove.StartTime;
+            var endConstraint = startConstraint + settings.Epsilon;
+
+            if (otherMove.IsWait)
+            {
+                endConstraint = double.IsPositiveInfinity(otherMove.EndTime)
+                    ? double.PositiveInfinity
+                    : Math.Max(endConstraint, otherMove.EndTime + settings.Epsilon);
+                return new Constraint(agentId, ownMove.FromNodeId, ownMove.ToNodeId, startConstraint, endConstraint);
+            }
+
+            if (CollisionMath.MovesCollide(ownMove, otherMove, settings.AgentRadius, settings.Epsilon, out var conflictTime))
+            {
+                var ownDuration = ownMove.EndTime - ownMove.StartTime;
+                var delayUntil = otherMove.EndTime + ownDuration + settings.AgentRadius * 2 / Math.Max(settings.AgentSpeed, settings.Epsilon) + settings.Epsilon;
+                endConstraint = Math.Max(endConstraint, delayUntil);
+            }
+
+            return new Constraint(agentId, ownMove.FromNodeId, ownMove.ToNodeId, startConstraint, endConstraint);
+        }
+    }
+}
