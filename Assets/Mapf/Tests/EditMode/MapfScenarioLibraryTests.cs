@@ -51,6 +51,12 @@ namespace Mapf.Tests
         {
             for (var i = 0; i + 1 < path.Points.Count; i++)
                 yield return new TimedMove(path.AgentId, path.Points[i].NodeId, path.Points[i + 1].NodeId, path.Points[i].Position, path.Points[i + 1].Position, path.Points[i].Time, path.Points[i + 1].Time);
+
+            if (path.ReservesGoalAfterArrival && path.Points.Count > 0)
+            {
+                var last = path.Last;
+                yield return new TimedMove(path.AgentId, last.NodeId, last.NodeId, last.Position, last.Position, last.Time, double.PositiveInfinity);
+            }
         }
 
         private static bool OverlapsAndTooClose(TimedMove a, TimedMove b, double radius)

@@ -6,6 +6,7 @@ namespace Mapf.UnityAdapter
         CrossIntersection,
         SidestepSwap,
         PassingLoop,
-        WaitBayMerge
+        WaitBayMerge,
+        ThreeAgentCorridorWithTwoBays
     }
 }

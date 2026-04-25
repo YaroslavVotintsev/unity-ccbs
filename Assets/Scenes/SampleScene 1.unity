@@ -193,6 +193,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfDebugGizmos
   nodeRadius: 0.08
+  labelOffset: 0.18
+  showNodeIds: 1
   nodeColor: {r: 0.2, g: 0.7, b: 1, a: 1}
   planColor: {r: 1, g: 0.75, b: 0.2, a: 1}
 --- !u!1 &65765411
@@ -908,7 +910,7 @@ Transform:
   m_GameObject: {fileID: 648364617}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 5, y: 0, z: -0.1}
+  m_LocalPosition: {x: 6, y: 0, z: -0.1}
   m_LocalScale: {x: 0.34, y: 0.34, z: 0.34}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -2386,6 +2388,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfDebugGizmos
   nodeRadius: 0.08
+  labelOffset: 0.18
+  showNodeIds: 1
   nodeColor: {r: 0.2, g: 0.7, b: 1, a: 1}
   planColor: {r: 1, g: 0.75, b: 0.2, a: 1}
 --- !u!114 &1434184337
@@ -2579,7 +2583,7 @@ Transform:
   m_GameObject: {fileID: 1607231264}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6, y: 0, z: -0.1}
+  m_LocalPosition: {x: 7, y: 0, z: -0.1}
   m_LocalScale: {x: 0.34, y: 0.34, z: 0.34}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -2950,7 +2954,7 @@ Transform:
   m_GameObject: {fileID: 1928716030}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 4, y: 0, z: -0.1}
+  m_LocalPosition: {x: 5, y: 0, z: -0.1}
   m_LocalScale: {x: 0.34, y: 0.34, z: 0.34}
   m_ConstrainProportionsScale: 1
   m_Children: []

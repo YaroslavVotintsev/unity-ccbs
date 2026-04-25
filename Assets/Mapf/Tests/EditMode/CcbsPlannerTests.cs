@@ -112,6 +112,66 @@ namespace Mapf.Tests
             Assert.That(result.Paths.First(p => p.AgentId == 1).Cost, Is.EqualTo(initialResult.Paths.First(p => p.AgentId == 1).Cost).Within(1e-6));
         }
 
+        [Test]
+        public void GlobalPlanAvoidsCommittedReservationFromNonPlannedAgent()
+        {
+            var graph = BuildLineGraph();
+            var reservation = new Reservation(
+                99,
+                new TimedPath(99, new[]
+                {
+                    new TimedPathPoint(2, new MapfVector2(2, 0), 0),
+                    new TimedPathPoint(1, new MapfVector2(1, 0), 1)
+                }, reservesGoalAfterArrival: false));
+
+            var request = new MapfPlanningRequest(
+                graph,
+                new[] { new AgentState(0, 0, 2) },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.1,
+                    AgentSpeed = 1,
+                    TimeLimitSeconds = 2,
+                    MaxHighLevelNodes = 2000
+                },
+                reservations: new[] { reservation });
+
+            var result = new CcbsPlanner().PlanGlobal(request);
+
+            Assert.That(result.Success, Is.True, result.Message);
+            Assert.That(result.Paths[0].Points[1].Time, Is.GreaterThan(1.0));
+        }
+
+        [Test]
+        public void OwnCommittedReservationDoesNotBlockSuffixPlanning()
+        {
+            var graph = BuildLineGraph();
+            var existing = new TimedPath(0, new[]
+            {
+                new TimedPathPoint(0, new MapfVector2(0, 0), 0),
+                new TimedPathPoint(1, new MapfVector2(1, 0), 10)
+            });
+            var reservation = new Reservation(0, existing);
+            var request = new MapfPlanningRequest(
+                graph,
+                new[] { new AgentState(0, 1, 2, 10) },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.1,
+                    AgentSpeed = 1,
+                    TimeLimitSeconds = 2,
+                    MaxHighLevelNodes = 2000
+                },
+                existingPlans: new[] { existing },
+                reservations: new[] { reservation });
+
+            var result = new CcbsPlanner().PlanGlobal(request);
+
+            Assert.That(result.Success, Is.True, result.Message);
+            Assert.That(result.Paths[0].Points.Select(p => p.NodeId), Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(result.Paths[0].Points.Last().Time, Is.EqualTo(11).Within(1e-6));
+        }
+
         private static RoadmapGraph BuildCrossGraph()
         {
             return new RoadmapGraph(
@@ -124,6 +184,18 @@ namespace Mapf.Tests
                     new RoadmapNode(4, "E", new MapfVector2(1, 1))
                 },
                 new[] { (0, 1), (1, 2), (1, 3), (1, 4) });
+        }
+
+        private static RoadmapGraph BuildLineGraph()
+        {
+            return new RoadmapGraph(
+                new[]
+                {
+                    new RoadmapNode(0, "A", new MapfVector2(0, 0)),
+                    new RoadmapNode(1, "B", new MapfVector2(1, 0)),
+                    new RoadmapNode(2, "C", new MapfVector2(2, 0))
+                },
+                new[] { (0, 1), (1, 2) });
         }
 
         private static RoadmapGraph BuildSidestepGraph()
@@ -161,6 +233,12 @@ namespace Mapf.Tests
             {
                 for (var i = 0; i + 1 < path.Points.Count; i++)
                     yield return new TimedMove(path.AgentId, path.Points[i].NodeId, path.Points[i + 1].NodeId, path.Points[i].Position, path.Points[i + 1].Position, path.Points[i].Time, path.Points[i + 1].Time);
+
+                if (path.ReservesGoalAfterArrival && path.Points.Count > 0)
+                {
+                    var last = path.Last;
+                    yield return new TimedMove(path.AgentId, last.NodeId, last.NodeId, last.Position, last.Position, last.Time, double.PositiveInfinity);
+                }
             }
 
             private static bool OverlapsAndTooClose(TimedMove a, TimedMove b, double radius)

@@ -38,7 +38,7 @@ namespace Mapf.UnityAdapter
                 go.transform.SetParent(nodeRoot.transform, false);
                 go.transform.position = new Vector3((float)node.Position.X, (float)node.Position.Y, 0);
                 var mapfNode = go.AddComponent<MapfNode>();
-                mapfNode.Configure(node.Name, node.Kind);
+                mapfNode.Configure(node.Name);
                 nodeObjects[node.Id] = mapfNode;
             }
 
@@ -93,6 +93,7 @@ namespace Mapf.UnityAdapter
                 MapfScenarioPreset.SidestepSwap => MapfScenarioLibrary.SidestepSwap(),
                 MapfScenarioPreset.PassingLoop => MapfScenarioLibrary.PassingLoop(),
                 MapfScenarioPreset.WaitBayMerge => MapfScenarioLibrary.WaitBayMerge(),
+                MapfScenarioPreset.ThreeAgentCorridorWithTwoBays => MapfScenarioLibrary.ThreeAgentCorridorWithTwoBays(),
                 _ => MapfScenarioLibrary.SidestepSwap()
             };
         }

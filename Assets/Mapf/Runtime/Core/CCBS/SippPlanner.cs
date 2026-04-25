@@ -16,7 +16,7 @@ namespace Mapf.Core.CCBS
             var cons = constraints.Where(c => c.AgentId == agent.AgentId).ToArray();
             var open = new List<SearchState>();
             var visited = new HashSet<StateKey>();
-            var start = new SearchState(agent.StartNodeId, agent.EarliestStartTime, 0, null);
+            var start = new SearchState(agent.StartNodeId, agent.EarliestStartTime, 0, 0, null);
             AddOpen(open, start, Estimate(graph, agent.StartNodeId, agent.GoalNodeId, settings));
             visited.Add(StateKey.From(start.NodeId, start.Time, settings.Epsilon));
             var expanded = 0;
@@ -32,6 +32,8 @@ namespace Mapf.Core.CCBS
                 if (current.NodeId == agent.GoalNodeId && !ViolatesNodeConstraint(cons, current.NodeId, current.Time, double.PositiveInfinity, settings.Epsilon))
                     return BuildPath(graph, agent.AgentId, current);
 
+                TryAddWaitSuccessor(open, visited, current, graph, agent.GoalNodeId, cons, settings);
+
                 foreach (var edge in graph.GetNeighbors(current.NodeId))
                 {
                     if (!TryScheduleMove(graph, current.NodeId, edge.To, current.Time, cons, settings, out var depart, out var arrive))
@@ -41,12 +43,48 @@ namespace Mapf.Core.CCBS
                     if (!visited.Add(key))
                         continue;
 
-                    var next = new SearchState(edge.To, arrive, depart, current);
-                    AddOpen(open, next, arrive + Estimate(graph, edge.To, agent.GoalNodeId, settings));
+                    var next = new SearchState(edge.To, arrive, depart, current.TravelDistance + edge.Length, current);
+                    AddOpen(open, next, SearchScore(next, graph, agent.GoalNodeId, settings));
                 }
             }
 
             return new TimedPath(agent.AgentId, Array.Empty<TimedPathPoint>());
+        }
+
+        private static void TryAddWaitSuccessor(
+            List<SearchState> open,
+            HashSet<StateKey> visited,
+            SearchState current,
+            RoadmapGraph graph,
+            int goalNodeId,
+            IReadOnlyList<Constraint> constraints,
+            MapfPlannerSettings settings)
+        {
+            var waitUntil = NextWaitTime(current.Time, constraints, settings);
+            if (waitUntil <= current.Time + settings.Epsilon)
+                return;
+
+            if (ViolatesNodeConstraint(constraints, current.NodeId, current.Time, waitUntil, settings.Epsilon))
+                return;
+
+            var key = StateKey.From(current.NodeId, waitUntil, settings.Epsilon);
+            if (!visited.Add(key))
+                return;
+
+            var next = new SearchState(current.NodeId, waitUntil, waitUntil, current.TravelDistance, current);
+            AddOpen(open, next, SearchScore(next, graph, goalNodeId, settings));
+        }
+
+        private static double NextWaitTime(double currentTime, IReadOnlyList<Constraint> constraints, MapfPlannerSettings settings)
+        {
+            var best = double.PositiveInfinity;
+            foreach (var constraint in constraints)
+            {
+                if (constraint.EndTime > currentTime + settings.Epsilon && constraint.EndTime < best - settings.Epsilon)
+                    best = constraint.EndTime;
+            }
+
+            return best;
         }
 
         private double Estimate(RoadmapGraph graph, int nodeId, int goalId, MapfPlannerSettings settings)
@@ -148,12 +186,70 @@ namespace Mapf.Core.CCBS
             {
                 var prev = states[i - 1];
                 var cur = states[i];
+                if (cur.NodeId == prev.NodeId)
+                {
+                    AddPoint(points, new TimedPathPoint(cur.NodeId, graph.GetNode(cur.NodeId).Position, cur.Time));
+                    continue;
+                }
+
                 if (cur.DepartTime > prev.Time + 1e-6)
-                    points.Add(new TimedPathPoint(prev.NodeId, graph.GetNode(prev.NodeId).Position, cur.DepartTime));
-                points.Add(new TimedPathPoint(cur.NodeId, graph.GetNode(cur.NodeId).Position, cur.Time));
+                    AddPoint(points, new TimedPathPoint(prev.NodeId, graph.GetNode(prev.NodeId).Position, cur.DepartTime));
+                AddPoint(points, new TimedPathPoint(cur.NodeId, graph.GetNode(cur.NodeId).Position, cur.Time));
             }
 
-            return new TimedPath(agentId, points);
+            return new TimedPath(agentId, CompressConsecutiveWaits(points));
+        }
+
+        private static IReadOnlyList<TimedPathPoint> CompressConsecutiveWaits(IReadOnlyList<TimedPathPoint> points)
+        {
+            if (points.Count < 3)
+                return points;
+
+            var compressed = new List<TimedPathPoint> { points[0] };
+            for (var i = 1; i < points.Count; i++)
+            {
+                var point = points[i];
+                var last = compressed[compressed.Count - 1];
+                if (point.NodeId == last.NodeId)
+                {
+                    if (compressed.Count == 1 || compressed[compressed.Count - 2].NodeId != point.NodeId)
+                        compressed.Add(point);
+                    else
+                        compressed[compressed.Count - 1] = point;
+                }
+                else
+                {
+                    compressed.Add(point);
+                }
+            }
+
+            return compressed;
+        }
+
+        private static void AddPoint(List<TimedPathPoint> points, TimedPathPoint point)
+        {
+            if (points.Count > 0)
+            {
+                var last = points[points.Count - 1];
+                if (last.NodeId == point.NodeId && Math.Abs(last.Time - point.Time) < 1e-6)
+                    return;
+
+                points.Add(point);
+                return;
+            }
+
+            points.Add(point);
+        }
+
+        private static double SearchScore(SearchState state, RoadmapGraph graph, int goalNodeId, MapfPlannerSettings settings)
+        {
+            return state.Time + EstimateStatic(graph, state.NodeId, goalNodeId, settings) + state.TravelDistance;
+        }
+
+        private static double EstimateStatic(RoadmapGraph graph, int nodeId, int goalId, MapfPlannerSettings settings)
+        {
+            var distance = MapfVector2.Distance(graph.GetNode(nodeId).Position, graph.GetNode(goalId).Position);
+            return distance / settings.AgentSpeed;
         }
 
         private static void AddOpen(List<SearchState> open, SearchState state, double f)
@@ -171,14 +267,16 @@ namespace Mapf.Core.CCBS
             public readonly int NodeId;
             public readonly double Time;
             public readonly double DepartTime;
+            public readonly double TravelDistance;
             public readonly SearchState Parent;
             public double F;
 
-            public SearchState(int nodeId, double time, double departTime, SearchState parent)
+            public SearchState(int nodeId, double time, double departTime, double travelDistance, SearchState parent)
             {
                 NodeId = nodeId;
                 Time = time;
                 DepartTime = departTime;
+                TravelDistance = travelDistance;
                 Parent = parent;
             }
         }

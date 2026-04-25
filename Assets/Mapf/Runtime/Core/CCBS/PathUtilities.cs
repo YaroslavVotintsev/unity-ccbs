@@ -22,8 +22,12 @@ namespace Mapf.Core.CCBS
                 moves.Add(new TimedMove(path.AgentId, a.NodeId, b.NodeId, a.Position, b.Position, a.Time, b.Time));
             }
 
-            var last = path.Last;
-            moves.Add(new TimedMove(path.AgentId, last.NodeId, last.NodeId, last.Position, last.Position, last.Time, double.PositiveInfinity));
+            if (path.ReservesGoalAfterArrival)
+            {
+                var last = path.Last;
+                moves.Add(new TimedMove(path.AgentId, last.NodeId, last.NodeId, last.Position, last.Position, last.Time, double.PositiveInfinity));
+            }
+
             return moves;
         }
     }

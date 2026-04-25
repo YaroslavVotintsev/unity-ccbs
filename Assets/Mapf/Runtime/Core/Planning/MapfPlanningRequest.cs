@@ -9,6 +9,7 @@ namespace Mapf.Core.Planning
         public RoadmapGraph Graph { get; }
         public IReadOnlyList<AgentState> Agents { get; }
         public IReadOnlyList<TimedPath> ExistingPlans { get; }
+        public IReadOnlyList<Reservation> Reservations { get; }
         public int? AffectedAgentId { get; }
         public MapfPlannerSettings Settings { get; }
 
@@ -17,12 +18,14 @@ namespace Mapf.Core.Planning
             IReadOnlyList<AgentState> agents,
             MapfPlannerSettings settings,
             IReadOnlyList<TimedPath> existingPlans = null,
-            int? affectedAgentId = null)
+            int? affectedAgentId = null,
+            IReadOnlyList<Reservation> reservations = null)
         {
             Graph = graph;
             Agents = agents;
             Settings = settings ?? new MapfPlannerSettings();
             ExistingPlans = existingPlans ?? new List<TimedPath>();
+            Reservations = reservations ?? new List<Reservation>();
             AffectedAgentId = affectedAgentId;
         }
     }

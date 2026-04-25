@@ -31,13 +31,18 @@ namespace Mapf.Core.CCBS
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(0.01, request.Settings.TimeLimitSeconds));
             var rootPaths = new TimedPath[request.Agents.Count];
             var agentIndex = BuildAgentIndex(request.Agents);
+            var reservationPaths = ReservationPaths(request);
 
             for (var i = 0; i < request.Agents.Count; i++)
             {
-                rootPaths[i] = _sipp.FindPath(request.Graph, request.Agents[i], Array.Empty<Constraint>(), request.Settings);
+                rootPaths[i] = WithExistingPrefix(_sipp.FindPath(request.Graph, request.Agents[i], Array.Empty<Constraint>(), request.Settings), request.ExistingPlans);
                 if (rootPaths[i].IsEmpty)
                     return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), $"No path for agent {request.Agents[i].AgentId}.");
             }
+
+            var prioritized = PlanPrioritized(request, rootPaths, reservationPaths, cancellationToken);
+            if (prioritized.Success)
+                return prioritized;
 
             var open = new List<CbsNode>();
             var seen = new HashSet<string>();
@@ -56,7 +61,7 @@ namespace Mapf.Core.CCBS
                 var node = open[0];
                 open.RemoveAt(0);
 
-                var conflict = _conflicts.FindFirstConflict(node.Paths, request.Settings);
+                var conflict = _conflicts.FindFirstConflict(WithReservations(node.Paths, reservationPaths), request.Settings);
                 if (!conflict.IsValid)
                     return new MapfPlanningResult(PlannerStatus.Success, node.Paths.OrderBy(p => p.AgentId).ToArray());
 
@@ -75,13 +80,16 @@ namespace Mapf.Core.CCBS
                 return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), $"Affected agent {affectedId} is not present.");
 
             var paths = request.ExistingPlans.ToDictionary(p => p.AgentId, p => p);
-            var fixedPaths = request.ExistingPlans.Where(p => p.AgentId != affectedId).ToArray();
+            var fixedPaths = request.ExistingPlans
+                .Where(p => p.AgentId != affectedId)
+                .Concat(ReservationPaths(request))
+                .ToArray();
             var constraints = new List<Constraint>();
 
             for (var i = 0; i < request.Settings.MaxLocalRepairIterations; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var path = _sipp.FindPath(request.Graph, agent, constraints, request.Settings);
+                var path = WithExistingPrefix(_sipp.FindPath(request.Graph, agent, constraints, request.Settings), request.ExistingPlans);
                 if (path.IsEmpty)
                     return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Local repair failed.");
 
@@ -97,6 +105,139 @@ namespace Mapf.Core.CCBS
             }
 
             return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Local repair iteration limit reached.");
+        }
+
+        private MapfPlanningResult PlanPrioritized(
+            MapfPlanningRequest request,
+            IReadOnlyList<TimedPath> rootPaths,
+            IReadOnlyList<TimedPath> reservationPaths,
+            CancellationToken cancellationToken)
+        {
+            var independentByAgent = rootPaths.ToDictionary(path => path.AgentId, path => path);
+            var orders = BuildPriorityOrders(request.Agents, independentByAgent);
+            TimedPath[] bestCandidate = null;
+
+            foreach (var order in orders)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var planned = new Dictionary<int, TimedPath>();
+                var failed = false;
+
+                foreach (var agent in order)
+                {
+                    var constraints = new List<Constraint>();
+                    TimedPath path = null;
+
+                    for (var i = 0; i < request.Settings.MaxLocalRepairIterations; i++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        path = WithExistingPrefix(_sipp.FindPath(request.Graph, agent, constraints, request.Settings), request.ExistingPlans);
+                        if (path == null || path.IsEmpty)
+                        {
+                            failed = true;
+                            break;
+                        }
+
+                        var fixedPaths = planned.Values.Concat(reservationPaths).ToArray();
+                        if (!_conflicts.HasConflict(path, fixedPaths, request.Settings, out var conflict))
+                            break;
+
+                        var own = conflict.AgentA == agent.AgentId ? conflict.MoveA : conflict.MoveB;
+                        var other = conflict.AgentA == agent.AgentId ? conflict.MoveB : conflict.MoveA;
+                        constraints.Add(ConstraintGenerator.ForAgent(agent.AgentId, own, other, request.Settings));
+                        path = null;
+                    }
+
+                    if (failed || path == null || path.IsEmpty)
+                    {
+                        failed = true;
+                        break;
+                    }
+
+                    planned[agent.AgentId] = path;
+                }
+
+                if (!failed && planned.Count == request.Agents.Count)
+                {
+                    var candidate = planned.Values.OrderBy(path => path.AgentId).ToArray();
+                    bestCandidate = ChooseBetter(bestCandidate, candidate);
+                }
+            }
+
+            return bestCandidate != null
+                ? new MapfPlanningResult(PlannerStatus.Success, bestCandidate)
+                : new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning failed.");
+        }
+
+        private static IReadOnlyList<IReadOnlyList<AgentState>> BuildPriorityOrders(
+            IReadOnlyList<AgentState> agents,
+            IReadOnlyDictionary<int, TimedPath> independentByAgent)
+        {
+            var original = agents.ToArray();
+            var shortestFirst = agents
+                .OrderBy(agent => independentByAgent.TryGetValue(agent.AgentId, out var path) ? path.Cost : double.PositiveInfinity)
+                .ThenBy(agent => agent.AgentId)
+                .ToArray();
+            var longestFirst = shortestFirst.Reverse().ToArray();
+
+            return new[] { shortestFirst, longestFirst, original };
+        }
+
+        private static TimedPath[] ChooseBetter(TimedPath[] currentBest, TimedPath[] candidate)
+        {
+            if (currentBest == null)
+                return candidate;
+
+            var currentScore = PlanQualityScore(currentBest);
+            var candidateScore = PlanQualityScore(candidate);
+            return candidateScore < currentScore - 1e-6 ? candidate : currentBest;
+        }
+
+        private static double PlanQualityScore(IEnumerable<TimedPath> paths)
+        {
+            var score = 0.0;
+            foreach (var path in paths)
+            {
+                score += path.Cost;
+                score += TravelDistance(path) * 10.0;
+                score += DirectionChanges(path) * 2.0;
+            }
+
+            return score;
+        }
+
+        private static double TravelDistance(TimedPath path)
+        {
+            var distance = 0.0;
+            for (var i = 0; i + 1 < path.Points.Count; i++)
+            {
+                var a = path.Points[i];
+                var b = path.Points[i + 1];
+                if (a.NodeId != b.NodeId)
+                    distance += MapfVector2.Distance(a.Position, b.Position);
+            }
+
+            return distance;
+        }
+
+        private static int DirectionChanges(TimedPath path)
+        {
+            var changes = 0;
+            MapfVector2? previous = null;
+            for (var i = 0; i + 1 < path.Points.Count; i++)
+            {
+                var a = path.Points[i];
+                var b = path.Points[i + 1];
+                if (a.NodeId == b.NodeId)
+                    continue;
+
+                var direction = b.Position - a.Position;
+                if (previous.HasValue && MapfVector2.Dot(previous.Value, direction) < -1e-6)
+                    changes++;
+                previous = direction;
+            }
+
+            return changes;
         }
 
         private void Branch(
@@ -120,13 +261,61 @@ namespace Mapf.Core.CCBS
             if (!seen.Add(signature))
                 return;
 
-            var newPath = _sipp.FindPath(request.Graph, request.Agents[index], constraints, request.Settings);
+            var newPath = WithExistingPrefix(_sipp.FindPath(request.Graph, request.Agents[index], constraints, request.Settings), request.ExistingPlans);
             if (newPath.IsEmpty || double.IsInfinity(newPath.Cost) || double.IsNaN(newPath.Cost))
                 return;
 
             var paths = parent.Paths.ToArray();
             paths[index] = newPath;
             AddOpen(open, new CbsNode(paths, constraints, Flowtime(paths)));
+        }
+
+        private static TimedPath WithExistingPrefix(TimedPath suffix, IReadOnlyList<TimedPath> existingPlans)
+        {
+            if (suffix == null || suffix.IsEmpty || existingPlans == null || existingPlans.Count == 0)
+                return suffix;
+
+            var existing = existingPlans.FirstOrDefault(path => path.AgentId == suffix.AgentId);
+            if (existing == null || existing.IsEmpty)
+                return suffix;
+
+            var switchPoint = suffix.Points[0];
+            var points = new List<TimedPathPoint>();
+            foreach (var point in existing.Points)
+            {
+                if (point.Time < switchPoint.Time - 1e-6)
+                    points.Add(point);
+            }
+
+            if (points.Count == 0)
+                return suffix;
+
+            if (points[points.Count - 1].NodeId != switchPoint.NodeId || Math.Abs(points[points.Count - 1].Time - switchPoint.Time) > 1e-6)
+                points.Add(switchPoint);
+
+            for (var i = 1; i < suffix.Points.Count; i++)
+                points.Add(suffix.Points[i]);
+
+            return new TimedPath(suffix.AgentId, points);
+        }
+
+        private static IReadOnlyList<TimedPath> ReservationPaths(MapfPlanningRequest request)
+        {
+            if (request.Reservations.Count == 0)
+                return Array.Empty<TimedPath>();
+
+            return request.Reservations
+                .Where(reservation => reservation.Path != null && !reservation.Path.IsEmpty)
+                .Select(reservation => reservation.Path)
+                .ToArray();
+        }
+
+        private static IReadOnlyList<TimedPath> WithReservations(IReadOnlyList<TimedPath> paths, IReadOnlyList<TimedPath> reservations)
+        {
+            if (reservations == null || reservations.Count == 0)
+                return paths;
+
+            return paths.Concat(reservations).ToArray();
         }
 
         private static string Signature(IEnumerable<Constraint> constraints)

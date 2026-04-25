@@ -14,7 +14,8 @@ namespace Mapf.Core.Planning
                 CrossIntersection(),
                 SidestepSwap(),
                 PassingLoop(),
-                WaitBayMerge()
+                WaitBayMerge(),
+                ThreeAgentCorridorWithTwoBays()
             };
         }
 
@@ -64,7 +65,7 @@ namespace Mapf.Core.Planning
                     Node(0, "A", 0, 0),
                     Node(1, "B", 1, 0),
                     Node(2, "C", 2, 0),
-                    Node(3, "Sidestep", 1, -1, RoadmapNodeKind.Sidestep)
+                    Node(3, "Sidestep", 1, -1)
                 },
                 new[] { (0, 1), (1, 2), (1, 3) });
 
@@ -107,7 +108,7 @@ namespace Mapf.Core.Planning
                     Node(1, "Merge", 1, 0),
                     Node(2, "EastGoal", 2, 0),
                     Node(3, "SouthSource", 1, -1),
-                    Node(4, "SouthEastGoal", 2, -1, RoadmapNodeKind.Waiting)
+                    Node(4, "SouthEastGoal", 2, -1)
                 },
                 new[] { (0, 1), (3, 1), (1, 2), (2, 4) });
 
@@ -118,9 +119,47 @@ namespace Mapf.Core.Planning
                 Settings(maxLowLevelNodes: 20000));
         }
 
-        private static RoadmapNode Node(int id, string name, double x, double y, RoadmapNodeKind kind = RoadmapNodeKind.Generic)
+        public static MapfScenario ThreeAgentCorridorWithTwoBays()
         {
-            return new RoadmapNode(id, name, new MapfVector2(x, y), kind);
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    Node(0, "1", 0, 0),
+                    Node(1, "2", 1, 0),
+                    Node(2, "3", 2, 0),
+                    Node(3, "4", 3, 0),
+                    Node(4, "5", 4, 0),
+                    Node(5, "6", 5, 0),
+                    Node(6, "7", 6, 0),
+                    Node(7, "8", 5, 1),
+                    Node(8, "9", 2, -1)
+                },
+                new[] { (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (5, 7), (2, 8) });
+
+            return new MapfScenario(
+                "Three Agent Corridor With Two Bays",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 0, 6),
+                    new AgentState(1, 6, 0),
+                    new AgentState(2, 8, 7)
+                },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.35,
+                    AgentSpeed = 1,
+                    TimeLimitSeconds = 5,
+                    MaxHighLevelNodes = 30000,
+                    MaxLowLevelNodes = 20000,
+                    MaxLocalRepairIterations = 256
+                },
+                new[] { 7, 8 });
+        }
+
+        private static RoadmapNode Node(int id, string name, double x, double y)
+        {
+            return new RoadmapNode(id, name, new MapfVector2(x, y));
         }
 
         private static MapfPlannerSettings Settings(int maxLowLevelNodes = 10000)

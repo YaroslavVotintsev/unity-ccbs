@@ -25,7 +25,7 @@ namespace Mapf.Authoring
             {
                 nodeIds[nodes[i]] = i;
                 var p = nodes[i].transform.position;
-                graphNodes.Add(new RoadmapNode(i, nodes[i].StableId, new MapfVector2(p.x, p.y), nodes[i].Kind));
+                graphNodes.Add(new RoadmapNode(i, nodes[i].StableId, new MapfVector2(p.x, p.y)));
             }
 
             var graphEdges = new List<(int A, int B)>();
