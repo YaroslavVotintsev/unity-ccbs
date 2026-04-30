@@ -7,7 +7,7 @@ namespace Mapf.Authoring
     {
         [SerializeField] private MapfNode a;
         [SerializeField] private MapfNode b;
-        [SerializeField] private bool requireAxisAligned = true;
+        [SerializeField] private bool requireAxisAligned = false;
         [SerializeField] private float axisTolerance = 0.01f;
 
         public MapfNode A => a;

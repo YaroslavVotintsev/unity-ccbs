@@ -15,7 +15,8 @@ namespace Mapf.Core.Planning
                 SidestepSwap(),
                 PassingLoop(),
                 WaitBayMerge(),
-                ThreeAgentCorridorWithTwoBays()
+                ThreeAgentCorridorWithTwoBays(),
+                LoggedElevenNodeThreeAgent()
             };
         }
 
@@ -151,10 +152,62 @@ namespace Mapf.Core.Planning
                     AgentSpeed = 1,
                     TimeLimitSeconds = 5,
                     MaxHighLevelNodes = 30000,
-                    MaxLowLevelNodes = 20000,
+                    MaxLowLevelNodes = 5000,
                     MaxLocalRepairIterations = 256
                 },
                 new[] { 7, 8 });
+        }
+
+        public static MapfScenario LoggedElevenNodeThreeAgent()
+        {
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    Node(0, "1", 0, 0),
+                    Node(1, "10", 3, -1),
+                    Node(2, "11", 6, 1),
+                    Node(3, "2", 1, 0),
+                    Node(4, "3", 2, 0),
+                    Node(5, "4", 3, 0),
+                    Node(6, "5", 4, 0),
+                    Node(7, "6", 5, 0),
+                    Node(8, "7", 6, 0),
+                    Node(9, "8", 7, 0),
+                    Node(10, "9", 8, 0)
+                },
+                new[]
+                {
+                    (0, 3),
+                    (1, 5),
+                    (2, 8),
+                    (3, 4),
+                    (4, 5),
+                    (5, 6),
+                    (6, 7),
+                    (7, 8),
+                    (8, 9),
+                    (9, 10)
+                });
+
+            return new MapfScenario(
+                "Logged Eleven Node Three Agent",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 0, 8),
+                    new AgentState(1, 10, 0),
+                    new AgentState(2, 1, 2)
+                },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.1,
+                    AgentSpeed = 1,
+                    TimeLimitSeconds = 5,
+                    MaxHighLevelNodes = 20000,
+                    MaxLowLevelNodes = 20000,
+                    MaxLocalRepairIterations = 128
+                },
+                new[] { 1, 2 });
         }
 
         private static RoadmapNode Node(int id, string name, double x, double y)

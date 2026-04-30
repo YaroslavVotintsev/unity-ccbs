@@ -173,6 +173,7 @@ namespace Mapf.Core.CCBS
             IReadOnlyList<AgentState> agents,
             IReadOnlyDictionary<int, TimedPath> independentByAgent)
         {
+            var orders = new List<IReadOnlyList<AgentState>>();
             var original = agents.ToArray();
             var shortestFirst = agents
                 .OrderBy(agent => independentByAgent.TryGetValue(agent.AgentId, out var path) ? path.Cost : double.PositiveInfinity)
@@ -180,7 +181,53 @@ namespace Mapf.Core.CCBS
                 .ToArray();
             var longestFirst = shortestFirst.Reverse().ToArray();
 
-            return new[] { shortestFirst, longestFirst, original };
+            AddUniqueOrder(orders, shortestFirst);
+            AddUniqueOrder(orders, longestFirst);
+            AddUniqueOrder(orders, original);
+
+            if (agents.Count <= 5)
+            {
+                foreach (var permutation in Permute(agents.ToArray(), 0))
+                    AddUniqueOrder(orders, permutation.ToArray());
+            }
+
+            return orders;
+        }
+
+        private static void AddUniqueOrder(List<IReadOnlyList<AgentState>> orders, AgentState[] candidate)
+        {
+            var signature = string.Join(",", candidate.Select(agent => agent.AgentId));
+            if (orders.Any(order => string.Join(",", order.Select(agent => agent.AgentId)) == signature))
+                return;
+
+            orders.Add(candidate);
+        }
+
+        private static IEnumerable<AgentState[]> Permute(AgentState[] agents, int index)
+        {
+            if (index == agents.Length)
+            {
+                yield return agents.ToArray();
+                yield break;
+            }
+
+            for (var i = index; i < agents.Length; i++)
+            {
+                Swap(agents, index, i);
+                foreach (var permutation in Permute(agents, index + 1))
+                    yield return permutation;
+                Swap(agents, index, i);
+            }
+        }
+
+        private static void Swap(AgentState[] agents, int a, int b)
+        {
+            if (a == b)
+                return;
+
+            var temp = agents[a];
+            agents[a] = agents[b];
+            agents[b] = temp;
         }
 
         private static TimedPath[] ChooseBetter(TimedPath[] currentBest, TimedPath[] candidate)

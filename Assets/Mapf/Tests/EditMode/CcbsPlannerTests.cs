@@ -99,7 +99,7 @@ namespace Mapf.Tests
                 graph,
                 new[]
                 {
-                    new AgentState(0, 0, 1),
+                    new AgentState(0, 0, 0),
                     new AgentState(1, 3, 4)
                 },
                 initial.Settings,
@@ -139,7 +139,8 @@ namespace Mapf.Tests
             var result = new CcbsPlanner().PlanGlobal(request);
 
             Assert.That(result.Success, Is.True, result.Message);
-            Assert.That(result.Paths[0].Points[1].Time, Is.GreaterThan(1.0));
+            var arrivalAtReservedNode = result.Paths[0].Points.First(point => point.NodeId == 1);
+            Assert.That(arrivalAtReservedNode.Time, Is.GreaterThan(1.0));
         }
 
         [Test]
@@ -170,6 +171,28 @@ namespace Mapf.Tests
             Assert.That(result.Success, Is.True, result.Message);
             Assert.That(result.Paths[0].Points.Select(p => p.NodeId), Is.EqualTo(new[] { 0, 1, 2 }));
             Assert.That(result.Paths[0].Points.Last().Time, Is.EqualTo(11).Within(1e-6));
+        }
+
+        [Test]
+        public void ThreeAgentCorridorUsesWaitingInsteadOfLoopingThirdAgent()
+        {
+            var scenario = MapfScenarioLibrary.ThreeAgentCorridorWithTwoBays();
+            var result = new CcbsPlanner().PlanGlobal(new MapfPlanningRequest(scenario.Graph, scenario.Agents, scenario.Settings));
+
+            Assert.That(result.Success, Is.True, result.Message);
+            var agentC = result.Paths.First(path => path.AgentId == 2);
+            Assert.That(agentC.Points.Select(point => point.NodeId), Is.EqualTo(new[] { 8, 8, 2, 3, 4, 5, 7 }));
+        }
+
+        [Test]
+        public void WaitBayMergeStaysSolvable()
+        {
+            var scenario = MapfScenarioLibrary.WaitBayMerge();
+            var result = new CcbsPlanner().PlanGlobal(new MapfPlanningRequest(scenario.Graph, scenario.Agents, scenario.Settings));
+
+            Assert.That(result.Success, Is.True, result.Message);
+            var detector = new PrivateConflictProbe();
+            Assert.That(detector.HasAnyConflict(result.Paths, scenario.Settings), Is.False);
         }
 
         private static RoadmapGraph BuildCrossGraph()

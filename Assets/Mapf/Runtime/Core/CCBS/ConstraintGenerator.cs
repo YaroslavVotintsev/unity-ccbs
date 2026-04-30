@@ -18,7 +18,7 @@ namespace Mapf.Core.CCBS
             }
 
             var startConstraint = ownMove.StartTime;
-            var endConstraint = startConstraint + settings.Epsilon;
+            var endConstraint = startConstraint + settings.Epsilon * 2;
 
             if (otherMove.IsWait)
             {
@@ -30,9 +30,7 @@ namespace Mapf.Core.CCBS
 
             if (CollisionMath.MovesCollide(ownMove, otherMove, settings.AgentRadius, settings.Epsilon, out var conflictTime))
             {
-                var ownDuration = ownMove.EndTime - ownMove.StartTime;
-                var delayUntil = otherMove.EndTime + ownDuration + settings.AgentRadius * 2 / Math.Max(settings.AgentSpeed, settings.Epsilon) + settings.Epsilon;
-                endConstraint = Math.Max(endConstraint, delayUntil);
+                endConstraint = Math.Max(endConstraint, CollisionMath.SafeStartTimeAfter(ownMove, otherMove, settings.AgentRadius, settings.Epsilon) + settings.Epsilon * 2);
             }
 
             return new Constraint(agentId, ownMove.FromNodeId, ownMove.ToNodeId, startConstraint, endConstraint);

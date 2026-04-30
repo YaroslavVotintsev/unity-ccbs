@@ -1,5 +1,6 @@
 ﻿<Solution>
   <Project Path="Mapf.Editor.csproj" />
   <Project Path="Mapf.Runtime.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Mapf.Tests.csproj" />
 </Solution>
