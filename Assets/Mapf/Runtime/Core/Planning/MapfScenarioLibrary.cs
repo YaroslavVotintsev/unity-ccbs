@@ -16,7 +16,10 @@ namespace Mapf.Core.Planning
                 PassingLoop(),
                 WaitBayMerge(),
                 ThreeAgentCorridorWithTwoBays(),
-                LoggedElevenNodeThreeAgent()
+                LoggedElevenNodeThreeAgent(),
+                ThreeAgentsElevenNodeOppositeEnds(),
+                FourAgentsTwelveNodeOppositeEnds(),
+                FiveAgentsThirteenNodeOppositeEnds()
             };
         }
 
@@ -32,7 +35,7 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (1, 2) });
 
             return new MapfScenario(
-                "Straight Line Single Agent",
+                "Basic Straight Line Single Agent",
                 graph,
                 new[] { new AgentState(0, 0, 2) },
                 Settings());
@@ -52,7 +55,7 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (1, 2), (1, 3), (1, 4) });
 
             return new MapfScenario(
-                "Cross Intersection",
+                "Basic Cross Intersection",
                 graph,
                 new[] { new AgentState(0, 0, 2), new AgentState(1, 3, 4) },
                 Settings());
@@ -71,10 +74,10 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (1, 2), (1, 3) });
 
             return new MapfScenario(
-                "Sidestep Swap",
+                "Basic Sidestep Swap",
                 graph,
                 new[] { new AgentState(0, 0, 2), new AgentState(1, 2, 0) },
-                Settings(maxLowLevelNodes: 20000),
+                Settings(),
                 new[] { 3 });
         }
 
@@ -93,10 +96,10 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (1, 2), (2, 3), (1, 4), (4, 5), (5, 2) });
 
             return new MapfScenario(
-                "Passing Loop",
+                "Basic Passing Loop",
                 graph,
                 new[] { new AgentState(0, 0, 3), new AgentState(1, 3, 0) },
-                Settings(maxLowLevelNodes: 30000),
+                Settings(),
                 new[] { 4, 5 });
         }
 
@@ -114,10 +117,10 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (3, 1), (1, 2), (2, 4) });
 
             return new MapfScenario(
-                "Wait Bay Merge",
+                "Basic Wait Bay Merge",
                 graph,
                 new[] { new AgentState(0, 0, 2), new AgentState(1, 3, 4) },
-                Settings(maxLowLevelNodes: 20000));
+                Settings());
         }
 
         public static MapfScenario ThreeAgentCorridorWithTwoBays()
@@ -138,7 +141,7 @@ namespace Mapf.Core.Planning
                 new[] { (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (5, 7), (2, 8) });
 
             return new MapfScenario(
-                "Three Agent Corridor With Two Bays",
+                "Basic Three Agent Corridor With Two Bays",
                 graph,
                 new[]
                 {
@@ -146,15 +149,7 @@ namespace Mapf.Core.Planning
                     new AgentState(1, 6, 0),
                     new AgentState(2, 8, 7)
                 },
-                new MapfPlannerSettings
-                {
-                    AgentRadius = 0.35,
-                    AgentSpeed = 1,
-                    TimeLimitSeconds = 5,
-                    MaxHighLevelNodes = 30000,
-                    MaxLowLevelNodes = 5000,
-                    MaxLocalRepairIterations = 256
-                },
+                Settings(),
                 new[] { 7, 8 });
         }
 
@@ -190,7 +185,7 @@ namespace Mapf.Core.Planning
                 });
 
             return new MapfScenario(
-                "Logged Eleven Node Three Agent",
+                "Basic Logged Eleven Node Three Agent",
                 graph,
                 new[]
                 {
@@ -198,16 +193,149 @@ namespace Mapf.Core.Planning
                     new AgentState(1, 10, 0),
                     new AgentState(2, 1, 2)
                 },
-                new MapfPlannerSettings
-                {
-                    AgentRadius = 0.1,
-                    AgentSpeed = 1,
-                    TimeLimitSeconds = 5,
-                    MaxHighLevelNodes = 20000,
-                    MaxLowLevelNodes = 20000,
-                    MaxLocalRepairIterations = 128
-                },
+                Settings(),
                 new[] { 1, 2 });
+        }
+
+        public static MapfScenario ThreeAgentsElevenNodeOppositeEnds()
+        {
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    Node(0, "1", 0, 0),
+                    Node(1, "10", 3, -1),
+                    Node(2, "11", 6, 1),
+                    Node(3, "2", 1, 0),
+                    Node(4, "3", 2, 0),
+                    Node(5, "4", 3, 0),
+                    Node(6, "5", 4, 0),
+                    Node(7, "6", 5, 0),
+                    Node(8, "7", 6, 0),
+                    Node(9, "8", 7, 0),
+                    Node(10, "9", 8, 0)
+                },
+                new[]
+                {
+                    (0, 3),
+                    (1, 5),
+                    (2, 8),
+                    (3, 4),
+                    (4, 5),
+                    (5, 6),
+                    (6, 7),
+                    (7, 8),
+                    (8, 9),
+                    (9, 10)
+                });
+
+            return new MapfScenario(
+                "Three Agents Eleven Node Opposite Ends",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 0, 10),
+                    new AgentState(1, 10, 0),
+                    new AgentState(2, 1, 2)
+                },
+                Settings(),
+                new[] { 1, 2 });
+        }
+
+        public static MapfScenario FourAgentsTwelveNodeOppositeEnds()
+        {
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    Node(0, "1", 0, 0),
+                    Node(1, "10", 3, -1),
+                    Node(2, "11", 6, 1),
+                    Node(3, "12", 7, -1),
+                    Node(4, "2", 1, 0),
+                    Node(5, "3", 2, 0),
+                    Node(6, "4", 3, 0),
+                    Node(7, "5", 4, 0),
+                    Node(8, "6", 5, 0),
+                    Node(9, "7", 6, 0),
+                    Node(10, "8", 7, 0),
+                    Node(11, "9", 8, 0)
+                },
+                new[]
+                {
+                    (0, 4),
+                    (1, 6),
+                    (2, 9),
+                    (3, 10),
+                    (4, 5),
+                    (5, 6),
+                    (6, 7),
+                    (7, 8),
+                    (8, 9),
+                    (9, 10),
+                    (10, 11)
+                });
+
+            return new MapfScenario(
+                "Four Agents Twelve Node Opposite Ends",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 0, 11),
+                    new AgentState(1, 11, 0),
+                    new AgentState(2, 1, 2),
+                    new AgentState(3, 2, 3)
+                },
+                Settings(),
+                new[] { 1, 2, 3 });
+        }
+
+        public static MapfScenario FiveAgentsThirteenNodeOppositeEnds()
+        {
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    Node(0, "1", 0, 0),
+                    Node(1, "10", 3, -1),
+                    Node(2, "11", 6, 1),
+                    Node(3, "12", 7, -1),
+                    Node(4, "13", 1, 1),
+                    Node(5, "2", 1, 0),
+                    Node(6, "3", 2, 0),
+                    Node(7, "4", 3, 0),
+                    Node(8, "5", 4, 0),
+                    Node(9, "6", 5, 0),
+                    Node(10, "7", 6, 0),
+                    Node(11, "8", 7, 0),
+                    Node(12, "9", 8, 0)
+                },
+                new[]
+                {
+                    (0, 5),
+                    (1, 7),
+                    (2, 10),
+                    (3, 11),
+                    (4, 5),
+                    (5, 6),
+                    (6, 7),
+                    (7, 8),
+                    (8, 9),
+                    (9, 10),
+                    (10, 11),
+                    (11, 12)
+                });
+
+            return new MapfScenario(
+                "Five Agents Thirteen Node Opposite Ends",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 0, 12),
+                    new AgentState(1, 12, 0),
+                    new AgentState(2, 1, 2),
+                    new AgentState(3, 2, 3),
+                    new AgentState(4, 4, 1)
+                },
+                Settings(),
+                new[] { 1, 2, 3, 4 });
         }
 
         private static RoadmapNode Node(int id, string name, double x, double y)
@@ -215,16 +343,16 @@ namespace Mapf.Core.Planning
             return new RoadmapNode(id, name, new MapfVector2(x, y));
         }
 
-        private static MapfPlannerSettings Settings(int maxLowLevelNodes = 10000)
+        private static MapfPlannerSettings Settings()
         {
             return new MapfPlannerSettings
             {
-                AgentRadius = 0.1,
+                AgentRadius = 0.3,
                 AgentSpeed = 1,
                 TimeLimitSeconds = 5,
-                MaxHighLevelNodes = 30000,
-                MaxLowLevelNodes = maxLowLevelNodes,
-                MaxLocalRepairIterations = 256
+                MaxHighLevelNodes = 20000,
+                MaxLowLevelNodes = 5000,
+                MaxLocalRepairIterations = 128
             };
         }
     }

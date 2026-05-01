@@ -2,11 +2,15 @@ namespace Mapf.UnityAdapter
 {
     public enum MapfScenarioPreset
     {
-        StraightLineSingleAgent,
-        CrossIntersection,
-        SidestepSwap,
-        PassingLoop,
-        WaitBayMerge,
-        ThreeAgentCorridorWithTwoBays
+        BasicStraightLineSingleAgent,
+        BasicCrossIntersection,
+        BasicSidestepSwap,
+        BasicPassingLoop,
+        BasicWaitBayMerge,
+        BasicThreeAgentCorridorWithTwoBays,
+        BasicLoggedElevenNodeThreeAgent,
+        ThreeAgentsElevenNodeOppositeEnds,
+        FourAgentsTwelveNodeOppositeEnds,
+        FiveAgentsThirteenNodeOppositeEnds
     }
 }

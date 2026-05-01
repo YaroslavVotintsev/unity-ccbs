@@ -119,85 +119,6 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
---- !u!1 &1888087
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1888090}
-  - component: {fileID: 1888089}
-  - component: {fileID: 1888088}
-  - component: {fileID: 1888091}
-  m_Layer: 0
-  m_Name: Coordinator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1888088
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1888087}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 130e66610d7f2554f8decc426ce800a7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfCoordinator
-  sceneGraph: {fileID: 1888089}
-  settings: {fileID: 11400000, guid: 36586f1251988a7479c0dc551ba60f31, type: 2}
-  planOnStart: 1
-  logSceneSnapshotOnStart: 1
---- !u!114 &1888089
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1888087}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bce8f406591bbb245b5f445fec0b13aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfSceneGraph
---- !u!4 &1888090
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1888087}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1888091
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1888087}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3e5537671081ddf4f9c5d269d272bb95, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfDebugGizmos
-  nodeRadius: 0.08
-  labelOffset: 0.18
-  showNodeIds: 1
-  nodeColor: {r: 0.2, g: 0.7, b: 1, a: 1}
-  planColor: {r: 1, g: 0.75, b: 0.2, a: 1}
 --- !u!1 &16758979
 GameObject:
   m_ObjectHideFlags: 0
@@ -5841,7 +5762,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &1091300971
 Transform:
   m_ObjectHideFlags: 0
@@ -5883,7 +5804,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfAgent
   agentId: 4
   startNode: {fileID: 1811024595}
-  goalNode: {fileID: 1294643966}
+  goalNode: {fileID: 1835812060}
 --- !u!114 &1091300974
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -7863,8 +7784,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 130e66610d7f2554f8decc426ce800a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfCoordinator
-  sceneGraph: {fileID: 0}
-  settings: {fileID: 11400000, guid: 36586f1251988a7479c0dc551ba60f31, type: 2}
+  sceneGraph: {fileID: 1390016552}
+  settings: {fileID: 11400000, guid: 5c8a5d2fb885d8d4e9332ce7b9958ff7, type: 2}
   planOnStart: 1
   logSceneSnapshotOnStart: 1
 --- !u!114 &1390016552
@@ -12001,6 +11922,5 @@ SceneRoots:
   m_Roots:
   - {fileID: 519420032}
   - {fileID: 619394802}
-  - {fileID: 1888090}
   - {fileID: 1390016554}
   - {fileID: 1114808651}

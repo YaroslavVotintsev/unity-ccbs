@@ -9,7 +9,7 @@ namespace Mapf.UnityAdapter
 {
     public sealed class MapfScenarioSpawner : MonoBehaviour
     {
-        [SerializeField] private MapfScenarioPreset preset = MapfScenarioPreset.SidestepSwap;
+        [SerializeField] private MapfScenarioPreset preset = MapfScenarioPreset.BasicSidestepSwap;
         [SerializeField] private bool spawnOnStart;
         [SerializeField] private bool clearChildrenBeforeSpawn = true;
         [SerializeField] private Sprite agentSprite;
@@ -88,12 +88,16 @@ namespace Mapf.UnityAdapter
         {
             return selected switch
             {
-                MapfScenarioPreset.StraightLineSingleAgent => MapfScenarioLibrary.StraightLineSingleAgent(),
-                MapfScenarioPreset.CrossIntersection => MapfScenarioLibrary.CrossIntersection(),
-                MapfScenarioPreset.SidestepSwap => MapfScenarioLibrary.SidestepSwap(),
-                MapfScenarioPreset.PassingLoop => MapfScenarioLibrary.PassingLoop(),
-                MapfScenarioPreset.WaitBayMerge => MapfScenarioLibrary.WaitBayMerge(),
-                MapfScenarioPreset.ThreeAgentCorridorWithTwoBays => MapfScenarioLibrary.ThreeAgentCorridorWithTwoBays(),
+                MapfScenarioPreset.BasicStraightLineSingleAgent => MapfScenarioLibrary.StraightLineSingleAgent(),
+                MapfScenarioPreset.BasicCrossIntersection => MapfScenarioLibrary.CrossIntersection(),
+                MapfScenarioPreset.BasicSidestepSwap => MapfScenarioLibrary.SidestepSwap(),
+                MapfScenarioPreset.BasicPassingLoop => MapfScenarioLibrary.PassingLoop(),
+                MapfScenarioPreset.BasicWaitBayMerge => MapfScenarioLibrary.WaitBayMerge(),
+                MapfScenarioPreset.BasicThreeAgentCorridorWithTwoBays => MapfScenarioLibrary.ThreeAgentCorridorWithTwoBays(),
+                MapfScenarioPreset.BasicLoggedElevenNodeThreeAgent => MapfScenarioLibrary.LoggedElevenNodeThreeAgent(),
+                MapfScenarioPreset.ThreeAgentsElevenNodeOppositeEnds => MapfScenarioLibrary.ThreeAgentsElevenNodeOppositeEnds(),
+                MapfScenarioPreset.FourAgentsTwelveNodeOppositeEnds => MapfScenarioLibrary.FourAgentsTwelveNodeOppositeEnds(),
+                MapfScenarioPreset.FiveAgentsThirteenNodeOppositeEnds => MapfScenarioLibrary.FiveAgentsThirteenNodeOppositeEnds(),
                 _ => MapfScenarioLibrary.SidestepSwap()
             };
         }
