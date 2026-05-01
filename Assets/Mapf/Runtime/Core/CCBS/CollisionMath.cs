@@ -58,6 +58,9 @@ namespace Mapf.Core.CCBS
             var enter = (-bb - Math.Sqrt(discriminant)) / (2 * aa);
             var exit = (-bb + Math.Sqrt(discriminant)) / (2 * aa);
 
+            if (exit - enter <= eps)
+                return false;
+
             if (exit < -eps || enter > duration - eps)
                 return false;
 

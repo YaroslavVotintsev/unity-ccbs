@@ -45,8 +45,6 @@ namespace Mapf.Core.CCBS
             var prioritized = PlanPrioritized(request, rootPaths, reservationPaths, cancellationToken, deadline);
             if (prioritized.Success)
                 return prioritized;
-            if (prioritized.Status == PlannerStatus.Timeout)
-                return prioritized;
 
             var open = new List<CbsNode>();
             var seen = new HashSet<string>();
@@ -121,30 +119,32 @@ namespace Mapf.Core.CCBS
         {
             var independentByAgent = rootPaths.ToDictionary(path => path.AgentId, path => path);
             var orders = BuildPriorityOrders(request.Agents, independentByAgent, request.Graph);
+            var prioritizedDeadline = PrioritizedDeadline(deadline);
+            var repairLimit = PrioritizedRepairLimit(request);
 
             foreach (var order in orders)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                if (DateTime.UtcNow > deadline)
-                    return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+                if (DateTime.UtcNow > prioritizedDeadline)
+                    return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning budget exhausted.");
 
                 var planned = new Dictionary<int, TimedPath>();
                 var failed = false;
 
                 foreach (var agent in order)
                 {
-                    if (DateTime.UtcNow > deadline)
-                        return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+                    if (DateTime.UtcNow > prioritizedDeadline)
+                        return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning budget exhausted.");
 
                     var constraints = new List<Constraint>();
                     var constraintKeys = new HashSet<string>();
                     TimedPath path = null;
 
-                    for (var i = 0; i < request.Settings.MaxLocalRepairIterations; i++)
+                    for (var i = 0; i < repairLimit; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (DateTime.UtcNow > deadline)
-                            return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+                        if (DateTime.UtcNow > prioritizedDeadline)
+                            return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning budget exhausted.");
 
                         path = WithExistingPrefix(_sipp.FindPath(request.Graph, agent, constraints, request.Settings), request.ExistingPlans);
                         if (path == null || path.IsEmpty)
@@ -186,6 +186,23 @@ namespace Mapf.Core.CCBS
             return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning failed.");
         }
 
+        private static DateTime PrioritizedDeadline(DateTime globalDeadline)
+        {
+            var now = DateTime.UtcNow;
+            var remaining = globalDeadline - now;
+            if (remaining <= TimeSpan.Zero)
+                return now;
+
+            var budgetSeconds = Math.Min(2.0, Math.Max(0.05, remaining.TotalSeconds * 0.25));
+            return now + TimeSpan.FromSeconds(budgetSeconds);
+        }
+
+        private static int PrioritizedRepairLimit(MapfPlanningRequest request)
+        {
+            var graphScaledLimit = Math.Max(32, request.Graph.Count * 2);
+            return Math.Min(request.Settings.MaxLocalRepairIterations, graphScaledLimit);
+        }
+
         private static IReadOnlyList<IReadOnlyList<AgentState>> BuildPriorityOrders(
             IReadOnlyList<AgentState> agents,
             IReadOnlyDictionary<int, TimedPath> independentByAgent,
@@ -199,15 +216,16 @@ namespace Mapf.Core.CCBS
                 .ToArray();
             var longestFirst = shortestFirst.Reverse().ToArray();
 
-            AddUniqueOrder(orders, shortestFirst);
-            AddUniqueOrder(orders, longestFirst);
-            AddUniqueOrder(orders, original);
             AddUniqueOrder(orders, agents
-                .OrderBy(agent => IsStationary(agent) ? 0 : 1)
+                .OrderBy(agent => IsStationary(agent) ? 1 : 0)
                 .ThenBy(agent => agent.AgentId)
                 .ToArray());
             AddUniqueOrder(orders, agents
-                .OrderBy(agent => IsStationary(agent) ? 1 : 0)
+                .OrderBy(agent => PrimaryAxisDelta(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => PrimaryAxisDelta(graph, agent))
                 .ThenBy(agent => agent.AgentId)
                 .ToArray());
             AddUniqueOrder(orders, agents
@@ -235,17 +253,16 @@ namespace Mapf.Core.CCBS
                 .ThenBy(agent => agent.AgentId)
                 .ToArray());
             AddUniqueOrder(orders, agents
-                .OrderByDescending(agent => PrimaryAxisDelta(graph, agent))
-                .ThenBy(agent => agent.AgentId)
-                .ToArray());
-            AddUniqueOrder(orders, agents
-                .OrderBy(agent => PrimaryAxisDelta(graph, agent))
-                .ThenBy(agent => agent.AgentId)
-                .ToArray());
-            AddUniqueOrder(orders, agents
                 .OrderByDescending(agent => Math.Abs(PrimaryAxisDelta(graph, agent)))
                 .ThenBy(agent => agent.AgentId)
                 .ToArray());
+            AddUniqueOrder(orders, shortestFirst);
+            AddUniqueOrder(orders, longestFirst);
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => IsStationary(agent) ? 0 : 1)
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, original);
 
             if (agents.Count <= 4 || agents.Count <= 5 && graph.Count <= 20)
             {

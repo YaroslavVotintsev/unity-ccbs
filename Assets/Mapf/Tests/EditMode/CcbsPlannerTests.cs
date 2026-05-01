@@ -144,6 +144,45 @@ namespace Mapf.Tests
         }
 
         [Test]
+        public void GoalReservationWaitsForInfiniteSafeInterval()
+        {
+            var graph = new RoadmapGraph(
+                new[]
+                {
+                    new RoadmapNode(0, "West", new MapfVector2(0, 0)),
+                    new RoadmapNode(1, "Goal", new MapfVector2(1, 0)),
+                    new RoadmapNode(2, "East", new MapfVector2(2, 0)),
+                    new RoadmapNode(3, "Bay", new MapfVector2(1, -1))
+                },
+                new[] { (0, 1), (1, 2), (1, 3) });
+            var reservation = new Reservation(
+                99,
+                new TimedPath(99, new[]
+                {
+                    new TimedPathPoint(0, new MapfVector2(0, 0), 1.5),
+                    new TimedPathPoint(2, new MapfVector2(2, 0), 3.5)
+                }, reservesGoalAfterArrival: false));
+
+            var request = new MapfPlanningRequest(
+                graph,
+                new[] { new AgentState(0, 3, 1) },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.5,
+                    AgentSpeed = 1,
+                    TimeLimitSeconds = 2,
+                    MaxHighLevelNodes = 2000,
+                    MaxLowLevelNodes = 2000
+                },
+                reservations: new[] { reservation });
+
+            var result = new CcbsPlanner().PlanGlobal(request);
+
+            Assert.That(result.Success, Is.True, result.Message);
+            Assert.That(result.Paths[0].Last.Time, Is.GreaterThanOrEqualTo(3.5));
+        }
+
+        [Test]
         public void OwnCommittedReservationDoesNotBlockSuffixPlanning()
         {
             var graph = BuildLineGraph();

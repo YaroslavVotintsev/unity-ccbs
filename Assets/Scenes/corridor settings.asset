@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7a63dcedd22a14449be32ab6519ae471, type: 3}
-  m_Name: unsolved settings
+  m_Name: corridor settings
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfPlannerSettingsAsset
-  agentRadius: 0.2
-  agentSpeed: 1
-  timeLimitSeconds: 120
-  maxHighLevelNodes: 1000000
-  maxLowLevelNodes: 100000
-  maxLocalRepairIterations: 100000
+  agentRadius: 0.4
+  agentSpeed: 15
+  timeLimitSeconds: 5
+  maxHighLevelNodes: 20000
+  maxLowLevelNodes: 5000
+  maxLocalRepairIterations: 128

@@ -12,9 +12,12 @@ namespace Mapf.Core.CCBS
             {
                 var start = Math.Max(ownMove.StartTime, otherMove.StartTime);
                 var end = Math.Min(ownMove.EndTime, otherMove.EndTime);
-                if (double.IsPositiveInfinity(end))
-                    end = start + 1;
-                return new Constraint(agentId, ownMove.FromNodeId, ownMove.FromNodeId, start, Math.Max(start + settings.Epsilon, end));
+                return new Constraint(
+                    agentId,
+                    ownMove.FromNodeId,
+                    ownMove.FromNodeId,
+                    start,
+                    double.IsPositiveInfinity(end) ? double.PositiveInfinity : Math.Max(start + settings.Epsilon, end));
             }
 
             var startConstraint = ownMove.StartTime;

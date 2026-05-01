@@ -45,7 +45,7 @@ namespace Mapf.Core.CCBS
                 var current = open[0];
                 open.RemoveAt(0);
 
-                if (current.NodeId == agent.GoalNodeId)
+                if (current.NodeId == agent.GoalNodeId && double.IsPositiveInfinity(current.IntervalEnd))
                     return BuildPath(graph, agent.AgentId, current);
 
                 foreach (var edge in graph.GetNeighbors(current.NodeId))
