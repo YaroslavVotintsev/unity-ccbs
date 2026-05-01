@@ -26,6 +26,18 @@ namespace Mapf.UnityAdapter
                 return;
 
             _points.AddRange(path.Points);
+            _segmentIndex = 0;
+            MoveToPlanTime(now);
+        }
+
+        public void ApplyPlanStartingNow(TimedPath path, double now)
+        {
+            _points.Clear();
+            if (path == null || path.Points.Count == 0)
+                return;
+
+            _points.AddRange(RebasedPoints(path.Points, now));
+            _segmentIndex = 0;
             MoveToPlanTime(now);
         }
 
@@ -34,9 +46,15 @@ namespace Mapf.UnityAdapter
             if (path == null || path.Points.Count == 0)
                 return;
 
-            if (_points.Count == 0 || path.Points[0].Time <= now + 1e-6)
+            if (_points.Count == 0)
             {
-                ApplyPlan(path, now);
+                ApplyPlanStartingNow(path, now);
+                return;
+            }
+
+            if (path.Points[0].Time <= now + 1e-6)
+            {
+                ApplyPlanFromCurrentPosition(path, now);
                 return;
             }
 
@@ -56,7 +74,176 @@ namespace Mapf.UnityAdapter
 
             _points.Clear();
             _points.AddRange(merged);
+            _segmentIndex = 0;
             MoveToPlanTime(now);
+        }
+
+        private void ApplyPlanFromCurrentPosition(TimedPath path, double now)
+        {
+            if (!TryGetCurrentSegment(now, out var currentSegmentStart, out var currentSegmentEnd))
+            {
+                MoveToPlanTime(now);
+                return;
+            }
+
+            if (currentSegmentStart.NodeId == currentSegmentEnd.NodeId)
+            {
+                ApplyStationaryReplan(path, currentSegmentStart, now);
+                return;
+            }
+
+            if (currentSegmentEnd.Time <= now + 1e-6)
+            {
+                ApplyStationaryReplan(path, new TimedPathPoint(currentSegmentEnd.NodeId, currentSegmentEnd.Position, now), now);
+                return;
+            }
+
+            var current = GetPositionPointAt(now) ??
+                new TimedPathPoint(currentSegmentStart.NodeId, currentSegmentStart.Position, now);
+            var merged = new List<TimedPathPoint> { current };
+            merged.Add(currentSegmentEnd);
+
+            var suffixStart = FindHandoffIndex(path.Points, currentSegmentEnd);
+            if (suffixStart < 0)
+            {
+                AppendExistingSuffix(merged, currentSegmentEnd);
+            }
+            else
+            {
+                for (var i = suffixStart; i < path.Points.Count; i++)
+                {
+                    var point = path.Points[i];
+                    if (point.Time <= currentSegmentEnd.Time + 1e-6)
+                        continue;
+
+                    merged.Add(point);
+                }
+            }
+
+            _points.Clear();
+            _points.AddRange(merged);
+            _segmentIndex = 0;
+            MoveToPlanTime(now);
+        }
+
+        private void ApplyStationaryReplan(TimedPath path, TimedPathPoint current, double now)
+        {
+            var matchIndex = FindMatchingPositionIndex(path.Points, current.Position);
+            if (matchIndex < 0)
+            {
+                MoveToPlanTime(now);
+                return;
+            }
+
+            var offset = now - path.Points[matchIndex].Time;
+            var merged = new List<TimedPathPoint>
+            {
+                new(current.NodeId, current.Position, now)
+            };
+
+            for (var i = matchIndex + 1; i < path.Points.Count; i++)
+            {
+                var point = path.Points[i];
+                merged.Add(new TimedPathPoint(point.NodeId, point.Position, point.Time + offset));
+            }
+
+            _points.Clear();
+            _points.AddRange(merged);
+            _segmentIndex = 0;
+            MoveToPlanTime(now);
+        }
+
+        private void AppendExistingSuffix(List<TimedPathPoint> merged, TimedPathPoint handoff)
+        {
+            for (var i = 0; i < _points.Count; i++)
+            {
+                var point = _points[i];
+                if (point.Time <= handoff.Time + 1e-6)
+                    continue;
+
+                merged.Add(point);
+            }
+        }
+
+        private bool TryGetCurrentSegment(double now, out TimedPathPoint start, out TimedPathPoint end)
+        {
+            start = default;
+            end = default;
+
+            if (_points.Count == 0)
+                return false;
+
+            if (_points.Count == 1 || now <= _points[0].Time + 1e-6)
+            {
+                start = _points[0];
+                end = _points[0];
+                return true;
+            }
+
+            for (var i = 0; i + 1 < _points.Count; i++)
+            {
+                var a = _points[i];
+                var b = _points[i + 1];
+                if (now < a.Time - 1e-6 || now > b.Time + 1e-6)
+                    continue;
+
+                start = a;
+                end = b;
+                return true;
+            }
+
+            start = _points[_points.Count - 1];
+            end = _points[_points.Count - 1];
+            return true;
+        }
+
+        private static int FindHandoffIndex(IReadOnlyList<TimedPathPoint> points, TimedPathPoint handoff)
+        {
+            for (var i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                if (point.NodeId == handoff.NodeId && Math.Abs(point.Time - handoff.Time) < 1e-5)
+                    return i + 1;
+            }
+
+            for (var i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                if (point.NodeId == handoff.NodeId && point.Time >= handoff.Time - 1e-6)
+                    return i + 1;
+            }
+
+            return -1;
+        }
+
+        private static int FindMatchingPositionIndex(IReadOnlyList<TimedPathPoint> points, MapfVector2 position)
+        {
+            for (var i = 0; i < points.Count; i++)
+            {
+                if (MapfVector2.Distance(points[i].Position, position) < 1e-5)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static IReadOnlyList<TimedPathPoint> RebasedPoints(IReadOnlyList<TimedPathPoint> points, double now)
+        {
+            if (points.Count == 0)
+                return points;
+
+            var offset = now - points[0].Time;
+            if (Math.Abs(offset) < 1e-6)
+                return points;
+
+            var rebased = new TimedPathPoint[points.Count];
+            for (var i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                rebased[i] = new TimedPathPoint(point.NodeId, point.Position, point.Time + offset);
+            }
+
+            return rebased;
         }
 
         public AgentState GetPlanningState(int agentId, int fallbackNodeId, int goalNodeId, double now)

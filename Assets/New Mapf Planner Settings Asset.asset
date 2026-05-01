@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a63dcedd22a14449be32ab6519ae471, type: 3}
   m_Name: New Mapf Planner Settings Asset
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfPlannerSettingsAsset
-  agentRadius: 1
-  agentSpeed: 5
+  agentRadius: 0.3
+  agentSpeed: 3
   timeLimitSeconds: 5
   maxHighLevelNodes: 20000
   maxLowLevelNodes: 5000

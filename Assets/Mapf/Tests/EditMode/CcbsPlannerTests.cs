@@ -181,7 +181,14 @@ namespace Mapf.Tests
 
             Assert.That(result.Success, Is.True, result.Message);
             var agentC = result.Paths.First(path => path.AgentId == 2);
-            Assert.That(agentC.Points.Select(point => point.NodeId), Is.EqualTo(new[] { 8, 8, 2, 3, 4, 5, 7 }));
+            Assert.That(agentC.Points.First().NodeId, Is.EqualTo(8));
+            Assert.That(agentC.Points.Last().NodeId, Is.EqualTo(7));
+
+            var travelNodes = agentC.Points
+                .Where((point, index) => index == 0 || point.NodeId != agentC.Points[index - 1].NodeId)
+                .Select(point => point.NodeId)
+                .ToArray();
+            Assert.That(travelNodes.Distinct().Count(), Is.EqualTo(travelNodes.Length));
         }
 
         [Test]

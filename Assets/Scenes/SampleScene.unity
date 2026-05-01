@@ -153,6 +153,7 @@ MonoBehaviour:
   sceneGraph: {fileID: 1888089}
   settings: {fileID: 11400000, guid: 36586f1251988a7479c0dc551ba60f31, type: 2}
   planOnStart: 1
+  logSceneSnapshotOnStart: 1
 --- !u!114 &1888089
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -408,7 +409,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: A
-  kind: 0
 --- !u!4 &382429730
 Transform:
   m_ObjectHideFlags: 0
@@ -723,7 +723,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: F
-  kind: 0
 --- !u!4 &677087918
 Transform:
   m_ObjectHideFlags: 0
@@ -769,7 +768,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: C
-  kind: 0
 --- !u!4 &741894141
 Transform:
   m_ObjectHideFlags: 0
@@ -1081,7 +1079,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: B
-  kind: 0
 --- !u!4 &940249019
 Transform:
   m_ObjectHideFlags: 0
@@ -1127,7 +1124,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: 4
-  kind: 0
 --- !u!4 &993584084
 Transform:
   m_ObjectHideFlags: 0
@@ -1214,7 +1210,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: 3
-  kind: 0
 --- !u!4 &1125525838
 Transform:
   m_ObjectHideFlags: 0
@@ -1438,7 +1433,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: 2
-  kind: 0
 --- !u!4 &1249968674
 Transform:
   m_ObjectHideFlags: 0
@@ -1504,8 +1498,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfCoordinator
   sceneGraph: {fileID: 0}
-  settings: {fileID: 0}
+  settings: {fileID: 11400000, guid: 36586f1251988a7479c0dc551ba60f31, type: 2}
   planOnStart: 1
+  logSceneSnapshotOnStart: 1
 --- !u!114 &1390016552
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1587,7 +1582,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: D
-  kind: 0
 --- !u!4 &1429568524
 Transform:
   m_ObjectHideFlags: 0
@@ -1648,7 +1642,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: 1
-  kind: 0
 --- !u!1 &1577248803
 GameObject:
   m_ObjectHideFlags: 0
@@ -1911,7 +1904,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.Authoring.MapfNode
   stableId: E
-  kind: 0
 --- !u!4 &2037963692
 Transform:
   m_ObjectHideFlags: 0
