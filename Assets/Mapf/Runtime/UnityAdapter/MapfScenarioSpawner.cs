@@ -98,6 +98,7 @@ namespace Mapf.UnityAdapter
                 MapfScenarioPreset.ThreeAgentsElevenNodeOppositeEnds => MapfScenarioLibrary.ThreeAgentsElevenNodeOppositeEnds(),
                 MapfScenarioPreset.FourAgentsTwelveNodeOppositeEnds => MapfScenarioLibrary.FourAgentsTwelveNodeOppositeEnds(),
                 MapfScenarioPreset.FiveAgentsThirteenNodeOppositeEnds => MapfScenarioLibrary.FiveAgentsThirteenNodeOppositeEnds(),
+                MapfScenarioPreset.FiveAgentsLongSideBayCorridor => MapfScenarioLibrary.FiveAgentsLongSideBayCorridor(),
                 _ => MapfScenarioLibrary.SidestepSwap()
             };
         }

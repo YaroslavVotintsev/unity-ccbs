@@ -11,6 +11,7 @@ namespace Mapf.UnityAdapter
         BasicLoggedElevenNodeThreeAgent,
         ThreeAgentsElevenNodeOppositeEnds,
         FourAgentsTwelveNodeOppositeEnds,
-        FiveAgentsThirteenNodeOppositeEnds
+        FiveAgentsThirteenNodeOppositeEnds,
+        FiveAgentsLongSideBayCorridor
     }
 }

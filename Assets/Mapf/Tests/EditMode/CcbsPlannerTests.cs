@@ -202,6 +202,37 @@ namespace Mapf.Tests
             Assert.That(detector.HasAnyConflict(result.Paths, scenario.Settings), Is.False);
         }
 
+        [Test]
+        public void FiveAgentSideBayCorridorStaysSolvable()
+        {
+            var graph = MapfScenarioLibrary.LongSideBayCorridorGraph();
+            var request = new MapfPlanningRequest(
+                graph,
+                new[]
+                {
+                    new AgentState(0, 28, 45),
+                    new AgentState(1, 54, 48),
+                    new AgentState(2, 0, 0),
+                    new AgentState(3, 29, 42),
+                    new AgentState(4, 36, 44)
+                },
+                new MapfPlannerSettings
+                {
+                    AgentRadius = 0.5,
+                    AgentSpeed = 5,
+                    TimeLimitSeconds = 5,
+                    MaxHighLevelNodes = 100000,
+                    MaxLowLevelNodes = 100000,
+                    MaxLocalRepairIterations = 10000
+                });
+
+            var result = new CcbsPlanner().PlanGlobal(request);
+
+            Assert.That(result.Success, Is.True, result.Message);
+            var detector = new PrivateConflictProbe();
+            Assert.That(detector.HasAnyConflict(result.Paths, request.Settings), Is.False);
+        }
+
         private static RoadmapGraph BuildCrossGraph()
         {
             return new RoadmapGraph(

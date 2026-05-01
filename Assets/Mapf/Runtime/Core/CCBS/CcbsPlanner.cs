@@ -120,7 +120,7 @@ namespace Mapf.Core.CCBS
             DateTime deadline)
         {
             var independentByAgent = rootPaths.ToDictionary(path => path.AgentId, path => path);
-            var orders = BuildPriorityOrders(request.Agents, independentByAgent, request.Graph.Count);
+            var orders = BuildPriorityOrders(request.Agents, independentByAgent, request.Graph);
 
             foreach (var order in orders)
             {
@@ -189,7 +189,7 @@ namespace Mapf.Core.CCBS
         private static IReadOnlyList<IReadOnlyList<AgentState>> BuildPriorityOrders(
             IReadOnlyList<AgentState> agents,
             IReadOnlyDictionary<int, TimedPath> independentByAgent,
-            int graphNodeCount)
+            Graph.RoadmapGraph graph)
         {
             var orders = new List<IReadOnlyList<AgentState>>();
             var original = agents.ToArray();
@@ -202,14 +202,87 @@ namespace Mapf.Core.CCBS
             AddUniqueOrder(orders, shortestFirst);
             AddUniqueOrder(orders, longestFirst);
             AddUniqueOrder(orders, original);
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => IsStationary(agent) ? 0 : 1)
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => IsStationary(agent) ? 1 : 0)
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => StartX(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => StartX(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => GoalX(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => GoalX(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => StartY(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => StartY(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => PrimaryAxisDelta(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderBy(agent => PrimaryAxisDelta(graph, agent))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
+            AddUniqueOrder(orders, agents
+                .OrderByDescending(agent => Math.Abs(PrimaryAxisDelta(graph, agent)))
+                .ThenBy(agent => agent.AgentId)
+                .ToArray());
 
-            if (agents.Count <= 4 || agents.Count <= 5 && graphNodeCount <= 20)
+            if (agents.Count <= 4 || agents.Count <= 5 && graph.Count <= 20)
             {
                 foreach (var permutation in Permute(agents.ToArray(), 0))
                     AddUniqueOrder(orders, permutation.ToArray());
             }
 
             return orders;
+        }
+
+        private static bool IsStationary(AgentState agent)
+        {
+            return agent.StartNodeId == agent.GoalNodeId;
+        }
+
+        private static double StartX(Graph.RoadmapGraph graph, AgentState agent)
+        {
+            return graph.GetNode(agent.StartNodeId).Position.X;
+        }
+
+        private static double GoalX(Graph.RoadmapGraph graph, AgentState agent)
+        {
+            return graph.GetNode(agent.GoalNodeId).Position.X;
+        }
+
+        private static double StartY(Graph.RoadmapGraph graph, AgentState agent)
+        {
+            return graph.GetNode(agent.StartNodeId).Position.Y;
+        }
+
+        private static double PrimaryAxisDelta(Graph.RoadmapGraph graph, AgentState agent)
+        {
+            var start = graph.GetNode(agent.StartNodeId).Position;
+            var goal = graph.GetNode(agent.GoalNodeId).Position;
+            var dx = goal.X - start.X;
+            var dy = goal.Y - start.Y;
+            return Math.Abs(dx) >= Math.Abs(dy) ? dx : dy;
         }
 
         private static void AddUniqueOrder(List<IReadOnlyList<AgentState>> orders, AgentState[] candidate)

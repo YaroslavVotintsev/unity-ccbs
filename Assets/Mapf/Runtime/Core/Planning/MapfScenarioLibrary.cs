@@ -19,7 +19,8 @@ namespace Mapf.Core.Planning
                 LoggedElevenNodeThreeAgent(),
                 ThreeAgentsElevenNodeOppositeEnds(),
                 FourAgentsTwelveNodeOppositeEnds(),
-                FiveAgentsThirteenNodeOppositeEnds()
+                FiveAgentsThirteenNodeOppositeEnds(),
+                FiveAgentsLongSideBayCorridor()
             };
         }
 
@@ -338,9 +339,56 @@ namespace Mapf.Core.Planning
                 new[] { 1, 2, 3, 4 });
         }
 
+        public static MapfScenario FiveAgentsLongSideBayCorridor()
+        {
+            var graph = LongSideBayCorridorGraph();
+
+            return new MapfScenario(
+                "Five Agents Long Side Bay Corridor",
+                graph,
+                new[]
+                {
+                    new AgentState(0, 28, 45),
+                    new AgentState(1, 54, 48),
+                    new AgentState(2, 0, 0),
+                    new AgentState(3, 29, 42),
+                    new AgentState(4, 36, 44)
+                },
+                Settings());
+        }
+
+        public static RoadmapGraph LongSideBayCorridorGraph()
+        {
+            var nodes = new List<RoadmapNode>();
+            var edges = new List<(int, int)>();
+
+            nodes.Add(Node(0, "12", 0, 0));
+            for (var i = 1; i <= 28; i++)
+                nodes.Add(Node(i, CorridorName(i), i, 0));
+
+            edges.Add((0, 1));
+            for (var i = 1; i < 28; i++)
+                edges.Add((i, i + 1));
+
+            for (var bay = 13; bay <= 38; bay++)
+            {
+                var bayIndex = nodes.Count;
+                var corridorIndex = bay - 12;
+                nodes.Add(Node(bayIndex, bay.ToString(), corridorIndex, 1));
+                edges.Add((corridorIndex, bayIndex));
+            }
+
+            return new RoadmapGraph(nodes, edges);
+        }
+
         private static RoadmapNode Node(int id, string name, double x, double y)
         {
             return new RoadmapNode(id, name, new MapfVector2(x, y));
+        }
+
+        private static string CorridorName(int index)
+        {
+            return index <= 9 ? (119 + index).ToString() : (120 + index).ToString();
         }
 
         private static MapfPlannerSettings Settings()

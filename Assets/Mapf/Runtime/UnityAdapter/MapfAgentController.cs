@@ -128,7 +128,7 @@ namespace Mapf.UnityAdapter
 
         private void ApplyStationaryReplan(TimedPath path, TimedPathPoint current, double now)
         {
-            var matchIndex = FindMatchingPositionIndex(path.Points, current.Position);
+            var matchIndex = FindMatchingPositionIndex(path.Points, current.Position, now);
             if (matchIndex < 0)
             {
                 MoveToPlanTime(now);
@@ -216,15 +216,27 @@ namespace Mapf.UnityAdapter
             return -1;
         }
 
-        private static int FindMatchingPositionIndex(IReadOnlyList<TimedPathPoint> points, MapfVector2 position)
+        private static int FindMatchingPositionIndex(IReadOnlyList<TimedPathPoint> points, MapfVector2 position, double now)
         {
+            var bestIndex = -1;
+            var bestTime = double.NegativeInfinity;
             for (var i = 0; i < points.Count; i++)
             {
-                if (MapfVector2.Distance(points[i].Position, position) < 1e-5)
-                    return i;
+                var point = points[i];
+                if (point.Time > now + 1e-5)
+                    continue;
+
+                if (point.Time <= bestTime)
+                    continue;
+
+                if (MapfVector2.Distance(point.Position, position) < 1e-5)
+                {
+                    bestIndex = i;
+                    bestTime = point.Time;
+                }
             }
 
-            return -1;
+            return bestIndex;
         }
 
         private static IReadOnlyList<TimedPathPoint> RebasedPoints(IReadOnlyList<TimedPathPoint> points, double now)
