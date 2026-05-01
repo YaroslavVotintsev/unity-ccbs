@@ -9,6 +9,8 @@ namespace Mapf.Core.CCBS
 {
     public sealed class CcbsPlanner
     {
+        private const double HighLevelFocalWeight = 1.1;
+
         private readonly SippPlanner _sipp = new();
         private readonly ConflictDetector _conflicts = new();
 
@@ -40,13 +42,15 @@ namespace Mapf.Core.CCBS
                     return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), $"No path for agent {request.Agents[i].AgentId}.");
             }
 
-            var prioritized = PlanPrioritized(request, rootPaths, reservationPaths, cancellationToken);
+            var prioritized = PlanPrioritized(request, rootPaths, reservationPaths, cancellationToken, deadline);
             if (prioritized.Success)
+                return prioritized;
+            if (prioritized.Status == PlannerStatus.Timeout)
                 return prioritized;
 
             var open = new List<CbsNode>();
             var seen = new HashSet<string>();
-            AddOpen(open, new CbsNode(rootPaths, new List<Constraint>(), Flowtime(rootPaths)));
+            AddOpen(open, CreateNode(rootPaths, new List<Constraint>(), reservationPaths, request.Settings));
             seen.Add(string.Empty);
             var expanded = 0;
 
@@ -58,13 +62,12 @@ namespace Mapf.Core.CCBS
                 if (++expanded > request.Settings.MaxHighLevelNodes)
                     return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "High-level node limit reached.");
 
-                var node = open[0];
-                open.RemoveAt(0);
+                var node = PopBestNode(open);
 
-                var conflict = _conflicts.FindFirstConflict(WithReservations(node.Paths, reservationPaths), request.Settings);
-                if (!conflict.IsValid)
+                if (node.ConflictCount == 0)
                     return new MapfPlanningResult(PlannerStatus.Success, node.Paths.OrderBy(p => p.AgentId).ToArray());
 
+                var conflict = SelectConflict(node.Conflicts);
                 Branch(request, agentIndex, open, seen, node, conflict.AgentA, conflict.MoveA, conflict.MoveB);
                 Branch(request, agentIndex, open, seen, node, conflict.AgentB, conflict.MoveB, conflict.MoveA);
             }
@@ -85,6 +88,7 @@ namespace Mapf.Core.CCBS
                 .Concat(ReservationPaths(request))
                 .ToArray();
             var constraints = new List<Constraint>();
+            var constraintKeys = new HashSet<string>();
 
             for (var i = 0; i < request.Settings.MaxLocalRepairIterations; i++)
             {
@@ -101,7 +105,8 @@ namespace Mapf.Core.CCBS
 
                 var own = conflict.AgentA == affectedId ? conflict.MoveA : conflict.MoveB;
                 var other = conflict.AgentA == affectedId ? conflict.MoveB : conflict.MoveA;
-                constraints.Add(ConstraintGenerator.ForAgent(affectedId, own, other, request.Settings));
+                if (!TryAddConstraint(constraints, constraintKeys, ConstraintGenerator.ForAgent(affectedId, own, other, request.Settings)))
+                    return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Local repair repeated a constraint without progress.");
             }
 
             return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Local repair iteration limit reached.");
@@ -111,26 +116,36 @@ namespace Mapf.Core.CCBS
             MapfPlanningRequest request,
             IReadOnlyList<TimedPath> rootPaths,
             IReadOnlyList<TimedPath> reservationPaths,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            DateTime deadline)
         {
             var independentByAgent = rootPaths.ToDictionary(path => path.AgentId, path => path);
-            var orders = BuildPriorityOrders(request.Agents, independentByAgent);
-            TimedPath[] bestCandidate = null;
+            var orders = BuildPriorityOrders(request.Agents, independentByAgent, request.Graph.Count);
 
             foreach (var order in orders)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (DateTime.UtcNow > deadline)
+                    return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+
                 var planned = new Dictionary<int, TimedPath>();
                 var failed = false;
 
                 foreach (var agent in order)
                 {
+                    if (DateTime.UtcNow > deadline)
+                        return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+
                     var constraints = new List<Constraint>();
+                    var constraintKeys = new HashSet<string>();
                     TimedPath path = null;
 
                     for (var i = 0; i < request.Settings.MaxLocalRepairIterations; i++)
                     {
                         cancellationToken.ThrowIfCancellationRequested();
+                        if (DateTime.UtcNow > deadline)
+                            return new MapfPlanningResult(PlannerStatus.Timeout, Array.Empty<TimedPath>(), "MAPF planning timed out during prioritized planning.");
+
                         path = WithExistingPrefix(_sipp.FindPath(request.Graph, agent, constraints, request.Settings), request.ExistingPlans);
                         if (path == null || path.IsEmpty)
                         {
@@ -144,7 +159,12 @@ namespace Mapf.Core.CCBS
 
                         var own = conflict.AgentA == agent.AgentId ? conflict.MoveA : conflict.MoveB;
                         var other = conflict.AgentA == agent.AgentId ? conflict.MoveB : conflict.MoveA;
-                        constraints.Add(ConstraintGenerator.ForAgent(agent.AgentId, own, other, request.Settings));
+                        if (!TryAddConstraint(constraints, constraintKeys, ConstraintGenerator.ForAgent(agent.AgentId, own, other, request.Settings)))
+                        {
+                            failed = true;
+                            break;
+                        }
+
                         path = null;
                     }
 
@@ -159,19 +179,17 @@ namespace Mapf.Core.CCBS
 
                 if (!failed && planned.Count == request.Agents.Count)
                 {
-                    var candidate = planned.Values.OrderBy(path => path.AgentId).ToArray();
-                    bestCandidate = ChooseBetter(bestCandidate, candidate);
+                    return new MapfPlanningResult(PlannerStatus.Success, planned.Values.OrderBy(path => path.AgentId).ToArray());
                 }
             }
 
-            return bestCandidate != null
-                ? new MapfPlanningResult(PlannerStatus.Success, bestCandidate)
-                : new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning failed.");
+            return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Prioritized planning failed.");
         }
 
         private static IReadOnlyList<IReadOnlyList<AgentState>> BuildPriorityOrders(
             IReadOnlyList<AgentState> agents,
-            IReadOnlyDictionary<int, TimedPath> independentByAgent)
+            IReadOnlyDictionary<int, TimedPath> independentByAgent,
+            int graphNodeCount)
         {
             var orders = new List<IReadOnlyList<AgentState>>();
             var original = agents.ToArray();
@@ -185,7 +203,7 @@ namespace Mapf.Core.CCBS
             AddUniqueOrder(orders, longestFirst);
             AddUniqueOrder(orders, original);
 
-            if (agents.Count <= 5)
+            if (agents.Count <= 4 || agents.Count <= 5 && graphNodeCount <= 20)
             {
                 foreach (var permutation in Permute(agents.ToArray(), 0))
                     AddUniqueOrder(orders, permutation.ToArray());
@@ -314,7 +332,22 @@ namespace Mapf.Core.CCBS
 
             var paths = parent.Paths.ToArray();
             paths[index] = newPath;
-            AddOpen(open, new CbsNode(paths, constraints, Flowtime(paths)));
+            AddOpen(open, CreateNode(paths, constraints, ReservationPaths(request), request.Settings));
+        }
+
+        private CbsNode CreateNode(
+            TimedPath[] paths,
+            IReadOnlyList<Constraint> constraints,
+            IReadOnlyList<TimedPath> reservations,
+            MapfPlannerSettings settings)
+        {
+            var conflicts = _conflicts.FindAllConflicts(WithReservations(paths, reservations), settings);
+            return new CbsNode(paths, constraints, Flowtime(paths), conflicts);
+        }
+
+        private static Conflict SelectConflict(IReadOnlyList<Conflict> conflicts)
+        {
+            return conflicts.Count == 0 ? default : conflicts[0];
         }
 
         private static TimedPath WithExistingPrefix(TimedPath suffix, IReadOnlyList<TimedPath> existingPlans)
@@ -376,6 +409,21 @@ namespace Mapf.Core.CCBS
                 .Select(c => $"{c.AgentId}:{c.FromNodeId}>{c.ToNodeId}:{c.StartTime:0.######}-{c.EndTime:0.######}"));
         }
 
+        private static bool TryAddConstraint(List<Constraint> constraints, HashSet<string> keys, Constraint constraint)
+        {
+            var key = ConstraintKey(constraint);
+            if (!keys.Add(key))
+                return false;
+
+            constraints.Add(constraint);
+            return true;
+        }
+
+        private static string ConstraintKey(Constraint constraint)
+        {
+            return $"{constraint.AgentId}:{constraint.FromNodeId}>{constraint.ToNodeId}:{constraint.StartTime:0.######}-{constraint.EndTime:0.######}";
+        }
+
         private static Dictionary<int, int> BuildAgentIndex(IReadOnlyList<AgentState> agents)
         {
             var result = new Dictionary<int, int>();
@@ -394,11 +442,39 @@ namespace Mapf.Core.CCBS
 
         private static void AddOpen(List<CbsNode> open, CbsNode node)
         {
-            var index = open.FindIndex(n => n.Cost > node.Cost);
+            var index = open.FindIndex(n =>
+                n.Cost > node.Cost ||
+                Math.Abs(n.Cost - node.Cost) < 1e-6 && n.ConflictCount > node.ConflictCount ||
+                Math.Abs(n.Cost - node.Cost) < 1e-6 && n.ConflictCount == node.ConflictCount && n.ConstraintCount > node.ConstraintCount);
             if (index < 0)
                 open.Add(node);
             else
                 open.Insert(index, node);
+        }
+
+        private static CbsNode PopBestNode(List<CbsNode> open)
+        {
+            var minCost = open[0].Cost;
+            var costBound = minCost * HighLevelFocalWeight + 1e-6;
+            var bestIndex = 0;
+            for (var i = 1; i < open.Count; i++)
+            {
+                var candidate = open[i];
+                if (candidate.Cost > costBound)
+                    break;
+
+                var best = open[bestIndex];
+                if (candidate.ConflictCount < best.ConflictCount ||
+                    candidate.ConflictCount == best.ConflictCount && candidate.ConstraintCount < best.ConstraintCount ||
+                    candidate.ConflictCount == best.ConflictCount && candidate.ConstraintCount == best.ConstraintCount && candidate.Cost < best.Cost)
+                {
+                    bestIndex = i;
+                }
+            }
+
+            var node = open[bestIndex];
+            open.RemoveAt(bestIndex);
+            return node;
         }
 
         private sealed class CbsNode
@@ -406,12 +482,16 @@ namespace Mapf.Core.CCBS
             public readonly TimedPath[] Paths;
             public readonly IReadOnlyList<Constraint> Constraints;
             public readonly double Cost;
+            public readonly IReadOnlyList<Conflict> Conflicts;
+            public int ConflictCount => Conflicts.Count;
+            public int ConstraintCount => Constraints.Count;
 
-            public CbsNode(TimedPath[] paths, IReadOnlyList<Constraint> constraints, double cost)
+            public CbsNode(TimedPath[] paths, IReadOnlyList<Constraint> constraints, double cost, IReadOnlyList<Conflict> conflicts)
             {
                 Paths = paths;
                 Constraints = constraints;
                 Cost = cost;
+                Conflicts = conflicts;
             }
         }
     }

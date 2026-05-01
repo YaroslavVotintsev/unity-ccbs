@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfPlannerSettingsAsset
   agentRadius: 0.5
   agentSpeed: 5
-  timeLimitSeconds: 30
-  maxHighLevelNodes: 30000
-  maxLowLevelNodes: 10000
+  timeLimitSeconds: 60
+  maxHighLevelNodes: 100000
+  maxLowLevelNodes: 100000
   maxLocalRepairIterations: 10000
