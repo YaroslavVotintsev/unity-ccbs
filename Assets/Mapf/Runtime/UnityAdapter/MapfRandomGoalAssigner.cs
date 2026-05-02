@@ -86,7 +86,10 @@ namespace Mapf.UnityAdapter
                 agent);
 
             coordinator.RequestAgentGoal(agent, goal);
-            _states[agent] = new AgentRuntimeState { ArrivalTime = null, AssignedGoal = goal };
+            var state = _states.TryGetValue(agent, out var existing) ? existing : NewState(agent);
+            state.ArrivalTime = null;
+            state.AssignedGoal = goal;
+            _states[agent] = state;
         }
 
         private MapfNode PickGoal(MapfAgent agent)
@@ -169,7 +172,7 @@ namespace Mapf.UnityAdapter
             foreach (var agent in agents)
             {
                 if (agent != null && !_states.ContainsKey(agent))
-                    _states.Add(agent, new AgentRuntimeState { AssignedGoal = agent.GoalNode });
+                    _states.Add(agent, NewState(agent));
             }
 
             foreach (var agent in _states.Keys.Where(agent => agent == null || !agents.Contains(agent)).ToArray())
@@ -191,6 +194,14 @@ namespace Mapf.UnityAdapter
         private static string NodeId(MapfNode node)
         {
             return node != null ? node.StableId : "<unknown>";
+        }
+
+        private static AgentRuntimeState NewState(MapfAgent agent)
+        {
+            return new AgentRuntimeState
+            {
+                AssignedGoal = agent.GoalNode
+            };
         }
 
         [Serializable]
