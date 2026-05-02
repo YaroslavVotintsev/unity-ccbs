@@ -192,11 +192,11 @@ namespace Mapf.UnityAdapter
             builder.AppendLine("MAPF_SCENE_SNAPSHOT_BEGIN");
             builder.AppendLine("Nodes:");
             foreach (var node in graph.Nodes)
-                builder.AppendLine($"  {node.Id}: id=\"{Escape(node.Name)}\" pos=({node.Position.X:0.###},{node.Position.Y:0.###})");
+                builder.AppendLine($"  {node.Id}: id=\"{Escape(node.Name)}\" pos=({FormatDecimal(node.Position.X)},{FormatDecimal(node.Position.Y)})");
 
             builder.AppendLine("Edges:");
             foreach (var edge in graph.Edges.Where(edge => edge.From < edge.To))
-                builder.AppendLine($"  \"{Escape(stableIdsByNode[edge.From])}\" -- \"{Escape(stableIdsByNode[edge.To])}\"");
+                builder.AppendLine($"  \"{Escape(stableIdsByNode[edge.From])}\" -- \"{Escape(stableIdsByNode[edge.To])}\" length={FormatDecimal(edge.Length)}");
 
             builder.AppendLine($"Agents: {agents.Count}");
             foreach (var agent in agents)
@@ -217,6 +217,11 @@ namespace Mapf.UnityAdapter
         private static string Escape(string value)
         {
             return (value ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+        }
+
+        private static string FormatDecimal(double value)
+        {
+            return value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
         }
 
         private static void ApplyPlans(IReadOnlyList<MapfAgent> agents, IReadOnlyList<TimedPath> paths, double now)

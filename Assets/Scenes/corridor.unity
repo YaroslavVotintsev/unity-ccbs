@@ -3472,7 +3472,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfCoordinator
   sceneGraph: {fileID: 1390016552}
-  settings: {fileID: 11400000, guid: 5709351d6f626ed4199c8321c756e593, type: 2}
+  settings: {fileID: 11400000, guid: 4e101758ed282ff45a344f64932d3dc6, type: 2}
   planOnStart: 1
   logSceneSnapshotOnStart: 1
 --- !u!114 &1390016552
@@ -5972,7 +5972,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2032979552
 Transform:
   m_ObjectHideFlags: 0
