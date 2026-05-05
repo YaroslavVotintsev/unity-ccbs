@@ -5,10 +5,16 @@ using UnityEngine;
 
 namespace Mapf.Editor
 {
+    /// <summary>
+    /// Editor menu commands for creating a <see cref="MapfEdge"/> between two selected <see cref="MapfNode"/> objects.
+    /// </summary>
     public static class MapfEdgeCreationMenu
     {
         private const string MenuPath = "Tools/MAPF/Create Edge Between Selected Nodes";
 
+        /// <summary>
+        /// Creates an undirected MAPF edge GameObject between the two selected node GameObjects.
+        /// </summary>
         [MenuItem(MenuPath)]
         public static void CreateEdgeBetweenSelectedNodes()
         {
@@ -43,6 +49,9 @@ namespace Mapf.Editor
             EditorUtility.SetDirty(edgeObject);
         }
 
+        /// <summary>
+        /// Enables the create-edge menu item only when exactly two nodes are selected.
+        /// </summary>
         [MenuItem(MenuPath, true)]
         public static bool ValidateCreateEdgeBetweenSelectedNodes()
         {

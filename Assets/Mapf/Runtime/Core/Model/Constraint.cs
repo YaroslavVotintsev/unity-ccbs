@@ -1,5 +1,8 @@
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// Low-level planning constraint forbidding an agent from occupying a node or starting an edge traversal in a time interval.
+    /// </summary>
     public readonly struct Constraint
     {
         public readonly int AgentId;

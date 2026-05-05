@@ -4,8 +4,14 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Helpers for converting timed paths into collision-checkable motion primitives.
+    /// </summary>
     internal static class PathUtilities
     {
+        /// <summary>
+        /// Converts path points into timed moves and optionally adds the infinite goal reservation.
+        /// </summary>
         public static IReadOnlyList<TimedMove> ToMoves(TimedPath path)
         {
             var moves = new List<TimedMove>();

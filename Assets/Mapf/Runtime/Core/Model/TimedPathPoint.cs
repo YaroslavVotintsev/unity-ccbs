@@ -1,5 +1,8 @@
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// A node, position, and absolute time sample in an agent path.
+    /// </summary>
     public readonly struct TimedPathPoint
     {
         public readonly int NodeId;

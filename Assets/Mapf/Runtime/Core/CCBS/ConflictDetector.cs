@@ -5,8 +5,14 @@ using Mapf.Core.Planning;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Detects continuous-time pairwise conflicts between timed paths.
+    /// </summary>
     internal sealed class ConflictDetector
     {
+        /// <summary>
+        /// Finds the earliest conflict across a set of paths.
+        /// </summary>
         public Conflict FindFirstConflict(IReadOnlyList<TimedPath> paths, MapfPlannerSettings settings)
         {
             Conflict best = default;
@@ -28,6 +34,9 @@ namespace Mapf.Core.CCBS
             return best;
         }
 
+        /// <summary>
+        /// Returns all detected pairwise conflicts, ordered by time.
+        /// </summary>
         public IReadOnlyList<Conflict> FindAllConflicts(IReadOnlyList<TimedPath> paths, MapfPlannerSettings settings)
         {
             var conflicts = new List<Conflict>();
@@ -41,6 +50,9 @@ namespace Mapf.Core.CCBS
             return conflicts;
         }
 
+        /// <summary>
+        /// Finds the earliest conflict between two paths.
+        /// </summary>
         public Conflict FindFirstConflict(TimedPath a, TimedPath b, MapfPlannerSettings settings)
         {
             var movesA = PathUtilities.ToMoves(a);
@@ -78,6 +90,9 @@ namespace Mapf.Core.CCBS
             }
         }
 
+        /// <summary>
+        /// Checks one path against fixed paths and returns the first conflict found.
+        /// </summary>
         public bool HasConflict(TimedPath path, IEnumerable<TimedPath> fixedPaths, MapfPlannerSettings settings, out Conflict conflict)
         {
             conflict = default;

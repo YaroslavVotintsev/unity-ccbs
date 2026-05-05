@@ -7,6 +7,11 @@ using Mapf.Core.Planning;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Pure C# continuous-time CBS-style planner for roadmap MAPF.
+    /// Uses SIPP-like low-level planning, continuous conflict detection, prioritized pre-planning,
+    /// and CBS high-level branching when conflicts remain.
+    /// </summary>
     public sealed class CcbsPlanner
     {
         private const double HighLevelFocalWeight = 1.1;
@@ -14,6 +19,9 @@ namespace Mapf.Core.CCBS
         private readonly SippPlanner _sipp = new();
         private readonly ConflictDetector _conflicts = new();
 
+        /// <summary>
+        /// Plans according to the request strategy. Affected-agent replans are tried locally before global fallback.
+        /// </summary>
         public MapfPlanningResult Plan(MapfPlanningRequest request, CancellationToken cancellationToken = default)
         {
             if (request.Settings.ReplanStrategy == ReplanStrategy.AffectedAgentWithGlobalFallback &&
@@ -28,6 +36,9 @@ namespace Mapf.Core.CCBS
             return PlanGlobal(request, cancellationToken);
         }
 
+        /// <summary>
+        /// Computes a full multi-agent plan from the request agent states, reservations, and settings.
+        /// </summary>
         public MapfPlanningResult PlanGlobal(MapfPlanningRequest request, CancellationToken cancellationToken = default)
         {
             var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(Math.Max(0.01, request.Settings.TimeLimitSeconds));
@@ -73,6 +84,9 @@ namespace Mapf.Core.CCBS
             return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Open set exhausted.");
         }
 
+        /// <summary>
+        /// Attempts to repair only one affected agent while treating all other current plans as fixed.
+        /// </summary>
         private MapfPlanningResult PlanAffectedAgent(MapfPlanningRequest request, CancellationToken cancellationToken)
         {
             var affectedId = request.AffectedAgentId.Value;
@@ -110,6 +124,9 @@ namespace Mapf.Core.CCBS
             return new MapfPlanningResult(PlannerStatus.NoSolution, Array.Empty<TimedPath>(), "Local repair iteration limit reached.");
         }
 
+        /// <summary>
+        /// Tries bounded prioritized planning orders before entering the more expensive CBS search.
+        /// </summary>
         private MapfPlanningResult PlanPrioritized(
             MapfPlanningRequest request,
             IReadOnlyList<TimedPath> rootPaths,
@@ -203,6 +220,9 @@ namespace Mapf.Core.CCBS
             return Math.Min(request.Settings.MaxLocalRepairIterations, graphScaledLimit);
         }
 
+        /// <summary>
+        /// Builds deterministic priority orders useful for corridors, side bays, and compact graphs.
+        /// </summary>
         private static IReadOnlyList<IReadOnlyList<AgentState>> BuildPriorityOrders(
             IReadOnlyList<AgentState> agents,
             IReadOnlyDictionary<int, TimedPath> independentByAgent,
@@ -395,6 +415,9 @@ namespace Mapf.Core.CCBS
             return changes;
         }
 
+        /// <summary>
+        /// Adds a constraint branch for one agent, replans that agent, and inserts the new CBS node if valid.
+        /// </summary>
         private void Branch(
             MapfPlanningRequest request,
             IReadOnlyDictionary<int, int> agentIndex,
@@ -425,6 +448,9 @@ namespace Mapf.Core.CCBS
             AddOpen(open, CreateNode(paths, constraints, ReservationPaths(request), request.Settings));
         }
 
+        /// <summary>
+        /// Creates a CBS node and precomputes its conflicts for focal-style node selection.
+        /// </summary>
         private CbsNode CreateNode(
             TimedPath[] paths,
             IReadOnlyList<Constraint> constraints,
@@ -440,6 +466,9 @@ namespace Mapf.Core.CCBS
             return conflicts.Count == 0 ? default : conflicts[0];
         }
 
+        /// <summary>
+        /// Merges a newly planned suffix with an existing committed prefix during replanning.
+        /// </summary>
         private static TimedPath WithExistingPrefix(TimedPath suffix, IReadOnlyList<TimedPath> existingPlans)
         {
             if (suffix == null || suffix.IsEmpty || existingPlans == null || existingPlans.Count == 0)
@@ -567,6 +596,9 @@ namespace Mapf.Core.CCBS
             return node;
         }
 
+        /// <summary>
+        /// Immutable high-level CBS search node containing one path per agent and the active constraints.
+        /// </summary>
         private sealed class CbsNode
         {
             public readonly TimedPath[] Paths;

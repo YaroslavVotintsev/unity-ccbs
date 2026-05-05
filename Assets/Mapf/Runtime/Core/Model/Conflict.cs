@@ -1,5 +1,8 @@
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// Continuous-time collision between two timed moves.
+    /// </summary>
     public readonly struct Conflict
     {
         public readonly int AgentA;

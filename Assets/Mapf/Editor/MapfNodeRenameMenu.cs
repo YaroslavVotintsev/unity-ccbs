@@ -4,10 +4,16 @@ using UnityEditor;
 
 namespace Mapf.Editor
 {
+    /// <summary>
+    /// Editor menu commands for renaming selected node GameObjects to their stable ids.
+    /// </summary>
     public static class MapfNodeRenameMenu
     {
         private const string MenuPath = "Tools/MAPF/Rename Selected Nodes To Id";
 
+        /// <summary>
+        /// Renames every selected <see cref="MapfNode"/> GameObject to its Stable Id.
+        /// </summary>
         [MenuItem(MenuPath)]
         public static void RenameSelectedNodesToId()
         {
@@ -42,6 +48,9 @@ namespace Mapf.Editor
             }
         }
 
+        /// <summary>
+        /// Enables the rename command when at least one selected GameObject has a <see cref="MapfNode"/>.
+        /// </summary>
         [MenuItem(MenuPath, true)]
         public static bool ValidateRenameSelectedNodesToId()
         {

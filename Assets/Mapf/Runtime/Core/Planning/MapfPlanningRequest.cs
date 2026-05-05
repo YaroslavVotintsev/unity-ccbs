@@ -4,6 +4,9 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.Planning
 {
+    /// <summary>
+    /// Complete pure C# planning request: graph snapshot, agent states, settings, existing plans, and reservations.
+    /// </summary>
     public sealed class MapfPlanningRequest
     {
         public RoadmapGraph Graph { get; }
@@ -13,6 +16,9 @@ namespace Mapf.Core.Planning
         public int? AffectedAgentId { get; }
         public MapfPlannerSettings Settings { get; }
 
+        /// <summary>
+        /// Creates a planning request. Existing plans and reservations are optional and mainly used during replanning.
+        /// </summary>
         public MapfPlanningRequest(
             RoadmapGraph graph,
             IReadOnlyList<AgentState> agents,

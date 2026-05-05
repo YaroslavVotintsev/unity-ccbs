@@ -6,6 +6,9 @@ using UnityEditor;
 
 namespace Mapf.UnityAdapter
 {
+    /// <summary>
+    /// Centralized Scene view debug drawing for roadmap nodes, roadmap edges, and agent labels.
+    /// </summary>
     public sealed class MapfDebugGizmos : MonoBehaviour
     {
         [SerializeField] private float nodeRadius = 0.08f;

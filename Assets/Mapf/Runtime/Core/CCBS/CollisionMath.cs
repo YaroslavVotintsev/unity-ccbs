@@ -3,8 +3,14 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Continuous collision and unsafe-interval math for disc agents moving along straight timed segments.
+    /// </summary>
     internal static class CollisionMath
     {
+        /// <summary>
+        /// Returns true when two timed moves overlap in time and their center distance drops below two radii.
+        /// </summary>
         public static bool MovesCollide(TimedMove a, TimedMove b, double radius, double eps, out double conflictTime)
         {
             conflictTime = 0;
@@ -68,6 +74,9 @@ namespace Mapf.Core.CCBS
             return true;
         }
 
+        /// <summary>
+        /// Computes a delayed start time for a move that avoids collision with another move.
+        /// </summary>
         public static double SafeStartTimeAfter(TimedMove ownMove, TimedMove otherMove, double radius, double eps)
         {
             if (!MovesCollide(ownMove, otherMove, radius, eps, out _))
@@ -97,6 +106,9 @@ namespace Mapf.Core.CCBS
             return high;
         }
 
+        /// <summary>
+        /// Computes the time interval during which a moving segment is unsafe for a fixed point.
+        /// </summary>
         public static bool PointMoveUnsafeInterval(
             MapfVector2 point,
             TimedMove move,
@@ -134,6 +146,9 @@ namespace Mapf.Core.CCBS
             return end > start + eps;
         }
 
+        /// <summary>
+        /// Computes move start times that would collide with a point occupied over a time interval.
+        /// </summary>
         public static bool MoveAgainstPointUnsafeStartInterval(
             TimedMove move,
             MapfVector2 point,

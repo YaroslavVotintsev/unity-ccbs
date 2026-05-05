@@ -1,5 +1,8 @@
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// Planner input state for one agent: current planning node, goal node, and earliest allowed start time.
+    /// </summary>
     public readonly struct AgentState
     {
         public readonly int AgentId;

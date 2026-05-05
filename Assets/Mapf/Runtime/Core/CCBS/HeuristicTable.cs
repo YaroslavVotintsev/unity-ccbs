@@ -4,10 +4,16 @@ using Mapf.Core.Graph;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Caches shortest roadmap distances to goal nodes for low-level A* scoring.
+    /// </summary>
     internal sealed class HeuristicTable
     {
         private readonly Dictionary<int, double[]> _byGoal = new();
 
+        /// <summary>
+        /// Returns the roadmap distance from a node to a goal, building and caching the table when needed.
+        /// </summary>
         public double Get(RoadmapGraph graph, int nodeId, int goalId)
         {
             if (!_byGoal.TryGetValue(goalId, out var distances))

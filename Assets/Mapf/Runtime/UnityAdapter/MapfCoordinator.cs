@@ -12,6 +12,11 @@ using UnityEngine;
 
 namespace Mapf.UnityAdapter
 {
+    /// <summary>
+    /// Unity coordinator for MAPF planning.
+    /// Builds graph/agent snapshots on the main thread, runs the pure C# planner asynchronously,
+    /// and applies returned plans to scene agents.
+    /// </summary>
     public sealed class MapfCoordinator : MonoBehaviour
     {
         [SerializeField] private MapfSceneGraph sceneGraph;
@@ -40,6 +45,10 @@ namespace Mapf.UnityAdapter
                 await RequestPlanAsync(null);
         }
 
+        /// <summary>
+        /// Assigns a new goal to an agent and queues replanning.
+        /// Multiple requests in one frame are batched into one planning request.
+        /// </summary>
         public void RequestAgentGoal(MapfAgent agent, MapfNode goal)
         {
             agent.SetGoal(goal);
@@ -71,6 +80,10 @@ namespace Mapf.UnityAdapter
                 StartCoroutine(RequestQueuedPlanNextFrame());
         }
 
+        /// <summary>
+        /// Builds and runs a planning request, optionally marking one affected agent for local repair.
+        /// Returns true when a new plan was successfully applied.
+        /// </summary>
         public async System.Threading.Tasks.Task<bool> RequestPlanAsync(int? affectedAgentId)
         {
             _planningCts?.Cancel();

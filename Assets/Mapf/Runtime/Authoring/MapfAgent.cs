@@ -6,6 +6,10 @@ using UnityEngine;
 
 namespace Mapf.Authoring
 {
+    /// <summary>
+    /// Scene component representing one MAPF-controlled agent.
+    /// Stores the agent id, start and goal nodes, detects runtime goal changes, and logs travel statistics.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(MapfAgentController))]
     public sealed class MapfAgent : MonoBehaviour
@@ -36,6 +40,9 @@ namespace Mapf.Authoring
         public MapfNode StartNode => startNode;
         public MapfNode GoalNode => goalNode;
 
+        /// <summary>
+        /// Assigns a new runtime goal and starts a new travel-statistics interval for the agent.
+        /// </summary>
         public void SetGoal(MapfNode goal)
         {
             goalNode = goal;
@@ -43,6 +50,9 @@ namespace Mapf.Authoring
             BeginAssignment(goal);
         }
 
+        /// <summary>
+        /// Initializes this agent from generated scenario data.
+        /// </summary>
         public void Configure(int id, MapfNode start, MapfNode goal)
         {
             agentId = id;

@@ -4,8 +4,14 @@ using Mapf.Core.Planning;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Creates CBS constraints for one agent from a detected conflict.
+    /// </summary>
     internal static class ConstraintGenerator
     {
+        /// <summary>
+        /// Returns a constraint that prevents the specified agent from repeating its conflicting move timing.
+        /// </summary>
         public static Constraint ForAgent(int agentId, TimedMove ownMove, TimedMove otherMove, MapfPlannerSettings settings)
         {
             if (ownMove.IsWait)

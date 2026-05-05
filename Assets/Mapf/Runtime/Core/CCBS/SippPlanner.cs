@@ -7,10 +7,16 @@ using Mapf.Core.Planning;
 
 namespace Mapf.Core.CCBS
 {
+    /// <summary>
+    /// Low-level single-agent planner using safe intervals derived from node constraints and edge-start constraints.
+    /// </summary>
     internal sealed class SippPlanner
     {
         private readonly HeuristicTable _heuristics = new();
 
+        /// <summary>
+        /// Finds a timed path for one agent that satisfies that agent's constraints.
+        /// </summary>
         public TimedPath FindPath(RoadmapGraph graph, AgentState agent, IEnumerable<Constraint> constraints, MapfPlannerSettings settings)
         {
             var cons = constraints.Where(c => c.AgentId == agent.AgentId).ToArray();

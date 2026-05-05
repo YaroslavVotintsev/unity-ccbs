@@ -2,6 +2,9 @@ using System;
 
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// Minimal double-precision 2D vector used by the pure planner without depending on UnityEngine.
+    /// </summary>
     public readonly struct MapfVector2 : IEquatable<MapfVector2>
     {
         public readonly double X;

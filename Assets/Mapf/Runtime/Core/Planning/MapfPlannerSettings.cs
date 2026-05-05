@@ -1,5 +1,8 @@
 namespace Mapf.Core.Planning
 {
+    /// <summary>
+    /// Tunable parameters controlling collision radius, agent speed, search limits, and replanning behavior.
+    /// </summary>
     public sealed class MapfPlannerSettings
     {
         public double AgentRadius { get; set; } = 0.35;

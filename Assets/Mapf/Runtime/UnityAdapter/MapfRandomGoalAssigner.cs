@@ -7,6 +7,9 @@ using Random = UnityEngine.Random;
 
 namespace Mapf.UnityAdapter
 {
+    /// <summary>
+    /// Runtime test harness that repeatedly assigns random allowed goal nodes after agents arrive and wait.
+    /// </summary>
     public sealed class MapfRandomGoalAssigner : MonoBehaviour
     {
         [SerializeField] private MapfCoordinator coordinator;

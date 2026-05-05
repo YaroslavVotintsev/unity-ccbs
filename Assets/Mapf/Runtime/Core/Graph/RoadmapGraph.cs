@@ -5,6 +5,10 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.Graph
 {
+    /// <summary>
+    /// Immutable bidirectional roadmap graph used by the MAPF planner.
+    /// Node ids must be contiguous and zero-based.
+    /// </summary>
     public sealed class RoadmapGraph
     {
         private readonly RoadmapNode[] _nodes;
@@ -15,6 +19,9 @@ namespace Mapf.Core.Graph
         public IReadOnlyList<RoadmapEdge> Edges => _edges;
         public int Count => _nodes.Length;
 
+        /// <summary>
+        /// Creates a graph from nodes and undirected edge pairs. Each pair is expanded into two directed edges.
+        /// </summary>
         public RoadmapGraph(IEnumerable<RoadmapNode> nodes, IEnumerable<(int A, int B)> undirectedEdges)
         {
             _nodes = nodes.OrderBy(n => n.Id).ToArray();
@@ -51,18 +58,27 @@ namespace Mapf.Core.Graph
             }
         }
 
+        /// <summary>
+        /// Returns a node by its zero-based graph id.
+        /// </summary>
         public RoadmapNode GetNode(int id)
         {
             ValidateNodeId(id);
             return _nodes[id];
         }
 
+        /// <summary>
+        /// Returns all directed outgoing edges from a node.
+        /// </summary>
         public IReadOnlyList<RoadmapEdge> GetNeighbors(int id)
         {
             ValidateNodeId(id);
             return _adjacency[id];
         }
 
+        /// <summary>
+        /// Computes traversal time for an existing directed edge at the supplied constant speed.
+        /// </summary>
         public double TravelTime(int from, int to, double speed)
         {
             if (speed <= 0)
@@ -75,6 +91,9 @@ namespace Mapf.Core.Graph
             throw new InvalidOperationException($"No edge exists from node {from} to node {to}.");
         }
 
+        /// <summary>
+        /// Throws if the supplied id is outside the graph node range.
+        /// </summary>
         public void ValidateNodeId(int id)
         {
             if (id < 0 || id >= _nodes.Length)

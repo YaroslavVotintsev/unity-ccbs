@@ -7,8 +7,15 @@ using UnityEngine;
 
 namespace Mapf.Authoring
 {
+    /// <summary>
+    /// Converts scene-authored nodes and edges into a pure roadmap graph snapshot.
+    /// This component is the boundary between Unity objects and worker-thread-safe planner data.
+    /// </summary>
     public sealed class MapfSceneGraph : MonoBehaviour
     {
+        /// <summary>
+        /// Builds a graph snapshot from the current scene and returns a mapping from scene nodes to graph node ids.
+        /// </summary>
         public RoadmapGraph BuildSnapshot(out Dictionary<MapfNode, int> nodeIds)
         {
             var nodes = FindObjectsByType<MapfNode>()

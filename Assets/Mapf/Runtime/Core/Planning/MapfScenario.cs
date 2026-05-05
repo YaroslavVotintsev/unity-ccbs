@@ -4,6 +4,9 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.Planning
 {
+    /// <summary>
+    /// Reusable test/demo scenario containing a graph, agent starts/goals, settings, and optional expected visited nodes.
+    /// </summary>
     public sealed class MapfScenario
     {
         public string Name { get; }
@@ -12,6 +15,9 @@ namespace Mapf.Core.Planning
         public IReadOnlyList<int> ExpectedVisitedNodes { get; }
         public MapfPlannerSettings Settings { get; }
 
+        /// <summary>
+        /// Creates a scenario definition for tests or scene spawning.
+        /// </summary>
         public MapfScenario(
             string name,
             RoadmapGraph graph,

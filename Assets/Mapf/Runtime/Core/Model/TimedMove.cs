@@ -2,6 +2,9 @@ using System;
 
 namespace Mapf.Core.Model
 {
+    /// <summary>
+    /// One timed motion primitive, either a wait at a node or a straight-line traversal between two node positions.
+    /// </summary>
     public readonly struct TimedMove
     {
         public readonly int AgentId;
@@ -26,6 +29,9 @@ namespace Mapf.Core.Model
         public bool IsWait => FromNodeId == ToNodeId;
         public double Duration => EndTime - StartTime;
 
+        /// <summary>
+        /// Returns the interpolated position occupied by the move at an absolute time.
+        /// </summary>
         public MapfVector2 PositionAt(double time)
         {
             if (IsWait || double.IsPositiveInfinity(EndTime) || Math.Abs(Duration) < 1e-9)

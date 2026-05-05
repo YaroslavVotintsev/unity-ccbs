@@ -7,6 +7,9 @@ using UnityEngine;
 
 namespace Mapf.UnityAdapter
 {
+    /// <summary>
+    /// Helper that instantiates predefined MAPF scenarios into the current Unity scene.
+    /// </summary>
     public sealed class MapfScenarioSpawner : MonoBehaviour
     {
         [SerializeField] private MapfScenarioPreset preset = MapfScenarioPreset.BasicSidestepSwap;
@@ -22,6 +25,9 @@ namespace Mapf.UnityAdapter
         }
 
         [ContextMenu("Spawn MAPF Scenario")]
+        /// <summary>
+        /// Spawns the selected scenario, including nodes, edges, agents, and support components.
+        /// </summary>
         public void Spawn()
         {
             if (clearChildrenBeforeSpawn)

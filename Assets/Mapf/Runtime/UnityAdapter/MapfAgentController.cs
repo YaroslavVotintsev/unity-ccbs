@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace Mapf.UnityAdapter
 {
+    /// <summary>
+    /// Applies timed roadmap plans to an agent transform and exposes committed motion for replanning.
+    /// </summary>
     public sealed class MapfAgentController : MonoBehaviour
     {
         private readonly List<TimedPathPoint> _points = new();
@@ -14,11 +17,17 @@ namespace Mapf.UnityAdapter
         public int CurrentPlanGoalNodeId => HasPlan ? _points[_points.Count - 1].NodeId : -1;
         public IReadOnlyList<TimedPathPoint> CurrentPoints => _points;
 
+        /// <summary>
+        /// Applies a plan using the current Unity time.
+        /// </summary>
         public void ApplyPlan(TimedPath path)
         {
             ApplyPlan(path, Time.timeAsDouble);
         }
 
+        /// <summary>
+        /// Applies an absolute-time plan and moves the transform to the corresponding point on it.
+        /// </summary>
         public void ApplyPlan(TimedPath path, double now)
         {
             _points.Clear();
@@ -30,6 +39,9 @@ namespace Mapf.UnityAdapter
             MoveToPlanTime(now);
         }
 
+        /// <summary>
+        /// Applies a new plan by rebasing its first timestamp to the supplied Unity time.
+        /// </summary>
         public void ApplyPlanStartingNow(TimedPath path, double now)
         {
             _points.Clear();
@@ -41,6 +53,9 @@ namespace Mapf.UnityAdapter
             MoveToPlanTime(now);
         }
 
+        /// <summary>
+        /// Applies a replanned suffix while preserving the currently committed edge traversal.
+        /// </summary>
         public void ApplyPlanPreservingCommittedPrefix(TimedPath path, double now)
         {
             if (path == null || path.Points.Count == 0)
@@ -258,6 +273,10 @@ namespace Mapf.UnityAdapter
             return rebased;
         }
 
+        /// <summary>
+        /// Returns the planner start state for this agent at a replanning instant.
+        /// Mid-edge agents report the next stable node and its arrival time.
+        /// </summary>
         public AgentState GetPlanningState(int agentId, int fallbackNodeId, int goalNodeId, double now)
         {
             if (_points.Count == 0)
@@ -267,11 +286,17 @@ namespace Mapf.UnityAdapter
             return new AgentState(agentId, next.NodeId, goalNodeId, Math.Max(now, next.Time));
         }
 
+        /// <summary>
+        /// Creates a pure timed-path snapshot of the current controller plan.
+        /// </summary>
         public TimedPath GetPlanSnapshot(int agentId)
         {
             return new TimedPath(agentId, _points.ToArray());
         }
 
+        /// <summary>
+        /// Returns the current non-interruptible edge segment as a reservation, if the agent is mid-edge.
+        /// </summary>
         public Reservation? GetCommittedReservation(int agentId, double now)
         {
             if (_points.Count < 2)

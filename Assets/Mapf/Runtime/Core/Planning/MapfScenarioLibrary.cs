@@ -4,8 +4,14 @@ using Mapf.Core.Model;
 
 namespace Mapf.Core.Planning
 {
+    /// <summary>
+    /// Built-in scenario definitions used by EditMode tests and the Unity scenario spawner.
+    /// </summary>
     public static class MapfScenarioLibrary
     {
+        /// <summary>
+        /// Returns all built-in scenarios.
+        /// </summary>
         public static IReadOnlyList<MapfScenario> All()
         {
             return new[]
@@ -24,6 +30,9 @@ namespace Mapf.Core.Planning
             };
         }
 
+        /// <summary>
+        /// Single-agent sanity scenario on a short line.
+        /// </summary>
         public static MapfScenario StraightLineSingleAgent()
         {
             var graph = new RoadmapGraph(
@@ -42,6 +51,9 @@ namespace Mapf.Core.Planning
                 Settings());
         }
 
+        /// <summary>
+        /// Two-agent crossing scenario through a shared intersection.
+        /// </summary>
         public static MapfScenario CrossIntersection()
         {
             var graph = new RoadmapGraph(
@@ -62,6 +74,9 @@ namespace Mapf.Core.Planning
                 Settings());
         }
 
+        /// <summary>
+        /// Two-agent opposite-direction swap requiring a sidestep node.
+        /// </summary>
         public static MapfScenario SidestepSwap()
         {
             var graph = new RoadmapGraph(
@@ -82,6 +97,9 @@ namespace Mapf.Core.Planning
                 new[] { 3 });
         }
 
+        /// <summary>
+        /// Two-agent passing scenario with a small loop.
+        /// </summary>
         public static MapfScenario PassingLoop()
         {
             var graph = new RoadmapGraph(
@@ -104,6 +122,9 @@ namespace Mapf.Core.Planning
                 new[] { 4, 5 });
         }
 
+        /// <summary>
+        /// Merge scenario where one agent may need to wait before entering a shared corridor.
+        /// </summary>
         public static MapfScenario WaitBayMerge()
         {
             var graph = new RoadmapGraph(
@@ -124,6 +145,9 @@ namespace Mapf.Core.Planning
                 Settings());
         }
 
+        /// <summary>
+        /// Three-agent corridor scenario with two side bays.
+        /// </summary>
         public static MapfScenario ThreeAgentCorridorWithTwoBays()
         {
             var graph = new RoadmapGraph(
@@ -154,6 +178,9 @@ namespace Mapf.Core.Planning
                 new[] { 7, 8 });
         }
 
+        /// <summary>
+        /// Logged compact eleven-node scenario captured from manual scene testing.
+        /// </summary>
         public static MapfScenario LoggedElevenNodeThreeAgent()
         {
             var graph = new RoadmapGraph(
@@ -198,6 +225,9 @@ namespace Mapf.Core.Planning
                 new[] { 1, 2 });
         }
 
+        /// <summary>
+        /// Three-agent opposite-end corridor scenario with side bays.
+        /// </summary>
         public static MapfScenario ThreeAgentsElevenNodeOppositeEnds()
         {
             var graph = new RoadmapGraph(
@@ -242,6 +272,9 @@ namespace Mapf.Core.Planning
                 new[] { 1, 2 });
         }
 
+        /// <summary>
+        /// Four-agent opposite-end corridor scenario with side bays.
+        /// </summary>
         public static MapfScenario FourAgentsTwelveNodeOppositeEnds()
         {
             var graph = new RoadmapGraph(
@@ -289,6 +322,9 @@ namespace Mapf.Core.Planning
                 new[] { 1, 2, 3 });
         }
 
+        /// <summary>
+        /// Five-agent compact corridor scenario used to exercise heavier passing interactions.
+        /// </summary>
         public static MapfScenario FiveAgentsThirteenNodeOppositeEnds()
         {
             var graph = new RoadmapGraph(
@@ -339,6 +375,9 @@ namespace Mapf.Core.Planning
                 new[] { 1, 2, 3, 4 });
         }
 
+        /// <summary>
+        /// Five-agent long side-bay corridor scenario modeled after warehouse-style tests.
+        /// </summary>
         public static MapfScenario FiveAgentsLongSideBayCorridor()
         {
             var graph = LongSideBayCorridorGraph();
@@ -357,6 +396,9 @@ namespace Mapf.Core.Planning
                 Settings());
         }
 
+        /// <summary>
+        /// Builds the long side-bay corridor graph shared by scenario presets and tests.
+        /// </summary>
         public static RoadmapGraph LongSideBayCorridorGraph()
         {
             var nodes = new List<RoadmapNode>();

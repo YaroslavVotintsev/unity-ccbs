@@ -4,8 +4,14 @@ using System.Linq;
 
 namespace Mapf.Editor
 {
+    /// <summary>
+    /// Editor utility for sorting selected transform children by GameObject name.
+    /// </summary>
     public static class MapfHierarchySorter
     {
+        /// <summary>
+        /// Sorts the active transform's direct children alphabetically by name.
+        /// </summary>
         [MenuItem("Tools/MAPF/Sort Children By Name")]
         public static void SortByName()
         {
