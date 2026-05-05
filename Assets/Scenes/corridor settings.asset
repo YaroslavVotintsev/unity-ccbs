@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: corridor settings
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfPlannerSettingsAsset
   agentRadius: 0.4
-  agentSpeed: 15
+  agentSpeed: 1
   timeLimitSeconds: 5
   maxHighLevelNodes: 20000
   maxLowLevelNodes: 5000

@@ -181,6 +181,7 @@ MonoBehaviour:
   agentId: 3
   startNode: {fileID: 1083881370}
   goalNode: {fileID: 2034794677}
+  arrivalDistance: 0.05
 --- !u!114 &16087930
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1451,6 +1452,7 @@ MonoBehaviour:
   agentId: 4
   startNode: {fileID: 891460733}
   goalNode: {fileID: 372636616}
+  arrivalDistance: 0.05
 --- !u!114 &612087799
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3455,10 +3457,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Mapf.Runtime::Mapf.UnityAdapter.MapfDebugGizmos
   nodeRadius: 0.08
-  labelOffset: 0.18
+  nodeLabelOffset: {x: -0.18, y: 0.18}
+  agentLabelOffset: {x: 0.08, y: 0.18}
   showNodeIds: 1
+  showAgentIds: 1
   nodeColor: {r: 0.2, g: 0.7, b: 1, a: 1}
-  planColor: {r: 1, g: 0.75, b: 0.2, a: 1}
+  edgeColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
 --- !u!114 &1390016551
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4245,6 +4249,7 @@ MonoBehaviour:
   agentId: 2
   startNode: {fileID: 1249897241}
   goalNode: {fileID: 1249897241}
+  arrivalDistance: 0.05
 --- !u!114 &1635390094
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4612,6 +4617,7 @@ MonoBehaviour:
   agentId: 0
   startNode: {fileID: 1769278340}
   goalNode: {fileID: 1829475487}
+  arrivalDistance: 0.05
 --- !u!114 &1718709784
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5696,6 +5702,7 @@ MonoBehaviour:
   agentId: 1
   startNode: {fileID: 1399023692}
   goalNode: {fileID: 1656539349}
+  arrivalDistance: 0.05
 --- !u!114 &2005901255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6015,6 +6022,7 @@ MonoBehaviour:
   agentId: 5
   startNode: {fileID: 2094005321}
   goalNode: {fileID: 372636616}
+  arrivalDistance: 0.05
 --- !u!114 &2032979555
 MonoBehaviour:
   m_ObjectHideFlags: 0

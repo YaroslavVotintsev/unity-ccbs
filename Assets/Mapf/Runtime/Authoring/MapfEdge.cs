@@ -20,14 +20,5 @@ namespace Mapf.Authoring
             a = nodeA;
             b = nodeB;
         }
-
-        private void OnDrawGizmos()
-        {
-            if (a == null || b == null)
-                return;
-
-            Gizmos.color = Color.gray;
-            Gizmos.DrawLine(a.transform.position, b.transform.position);
-        }
     }
 }

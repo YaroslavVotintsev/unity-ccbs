@@ -9,10 +9,12 @@ namespace Mapf.UnityAdapter
     public sealed class MapfDebugGizmos : MonoBehaviour
     {
         [SerializeField] private float nodeRadius = 0.08f;
-        [SerializeField] private float labelOffset = 0.18f;
+        [SerializeField] private Vector2 nodeLabelOffset = new(0f, 0.18f);
+        [SerializeField] private Vector2 agentLabelOffset = new(0f, 0.18f);
         [SerializeField] private bool showNodeIds = true;
+        [SerializeField] private bool showAgentIds = true;
         [SerializeField] private Color nodeColor = new(0.2f, 0.7f, 1f, 1f);
-        [SerializeField] private Color planColor = new(1f, 0.75f, 0.2f, 1f);
+        [SerializeField] private Color edgeColor = Color.gray;
 
         private void OnDrawGizmos()
         {
@@ -23,23 +25,41 @@ namespace Mapf.UnityAdapter
 #if UNITY_EDITOR
                 if (showNodeIds)
                 {
-                    var labelPosition = node.transform.position + Vector3.up * labelOffset;
+                    var labelPosition = node.transform.position + ToVector3(nodeLabelOffset);
                     Handles.Label(labelPosition, node.StableId);
                 }
 #endif
             }
 
-            Gizmos.color = planColor;
+            Gizmos.color = edgeColor;
+            foreach (var edge in FindObjectsByType<MapfEdge>())
+            {
+                if (edge.A == null || edge.B == null)
+                    continue;
+
+                Gizmos.DrawLine(edge.A.transform.position, edge.B.transform.position);
+            }
+
             foreach (var controller in FindObjectsByType<MapfAgentController>())
             {
-                var points = controller.CurrentPoints;
-                for (var i = 0; i + 1 < points.Count; i++)
+#if UNITY_EDITOR
+                if (showAgentIds && controller.TryGetComponent<MapfAgent>(out var agent))
                 {
-                    var a = new Vector3((float)points[i].Position.X, (float)points[i].Position.Y, 0);
-                    var b = new Vector3((float)points[i + 1].Position.X, (float)points[i + 1].Position.Y, 0);
-                    Gizmos.DrawLine(a, b);
+                    var labelPosition = controller.transform.position + ToVector3(agentLabelOffset);
+                    Handles.Label(labelPosition, $"ID:{agent.AgentId}\nGoal:{NodeId(agent.GoalNode)}");
                 }
+#endif
             }
+        }
+
+        private static Vector3 ToVector3(Vector2 offset)
+        {
+            return new Vector3(offset.x, offset.y, 0);
+        }
+
+        private static string NodeId(MapfNode node)
+        {
+            return node != null ? node.StableId : "<none>";
         }
     }
 }
